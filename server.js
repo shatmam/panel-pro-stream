@@ -4,7 +4,6 @@ const path = require("path");
 const {
   getDashboard,
   renovarFila,
-  updateFila,
   asignarEnFila,
   eliminarCliente,
   reasignarCuenta
@@ -12,7 +11,9 @@ const {
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+
+// Servir archivos estáticos desde la raíz
+app.use(express.static(__dirname));
 
 function auth(req, res, next) {
   const required = process.env.ADMIN_KEY;
@@ -27,74 +28,54 @@ app.get("/api/dashboard", auth, async (req, res) => {
     const data = await getDashboard();
     res.json({ ok: true, ...data });
   } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 
 app.post("/api/renovar", auth, async (req, res) => {
   try {
-    const { row, dias } = req.body || {};
-    if (!row || !dias) return res.status(400).json({ ok: false, error: "Faltan {row, dias}" });
-    const out = await renovarFila(Number(row), Number(dias));
+    const { row, dias } = req.body;
+    const out = await renovarFila({ row: Number(row), dias: Number(dias) });
     res.json({ ok: true, ...out });
   } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
-  }
-});
-
-app.post("/api/update", auth, async (req, res) => {
-  try {
-    const { row, fields } = req.body || {};
-    if (!row || !fields || typeof fields !== "object") {
-      return res.status(400).json({ ok: false, error: "Faltan {row, fields}" });
-    }
-    const out = await updateFila(Number(row), fields);
-    res.json({ ok: true, ...out });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 
 app.post("/api/asignar", auth, async (req, res) => {
   try {
-    const { row, nombre, telefono, dias } = req.body || {};
-    if (!row || !nombre || !telefono) {
-      return res.status(400).json({ ok: false, error: "Faltan {row, nombre, telefono}" });
-    }
+    const { row, nombre, telefono, dias } = req.body;
     const out = await asignarEnFila({ rowNumber: Number(row), nombre, telefono, dias: dias ?? 30 });
     res.json({ ok: true, ...out });
   } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 
 app.post("/api/delete", auth, async (req, res) => {
   try {
-    const { row } = req.body || {};
-    if (!row) return res.status(400).json({ ok: false, error: "Falta {row}" });
+    const { row } = req.body;
     const out = await eliminarCliente(Number(row));
     res.json({ ok: true, ...out });
   } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 
 app.post("/api/reassign", auth, async (req, res) => {
   try {
-    const { fromRow, toRow } = req.body || {};
-    if (!fromRow || !toRow) return res.status(400).json({ ok: false, error: "Faltan {fromRow, toRow}" });
+    const { fromRow, toRow } = req.body;
     const out = await reasignarCuenta({ fromRow: Number(fromRow), toRow: Number(toRow) });
     res.json({ ok: true, ...out });
   } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 
-// --- SOLUCIÓN FINAL PARA EL ERROR DE RUTA ---
-// Esta RegExp captura cualquier ruta que no sea de la API y sirve el frontend.
-app.get(/^(?!\/api).+/, (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+// Esta línea es vital: sirve el index.html para cualquier otra ruta
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-const port = Number(process.env.PORT || 3000);
-app.listen(port, () => console.log(`✅ Panel corriendo en http://localhost:${port}`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
