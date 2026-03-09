@@ -733,59 +733,54 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
         setStatus("❌ Error");
       }
     }
-// ... dentro de tu bloque <script> ...
 
-// CAMBIO: Renombramos 'asignar' a 'asignarEnFila' para que coincida con el error
-async function asignarEnFila() {
-  const servicio = $("asSvc").value.trim();
-  const row = Number($("asAccount").value);
-  const nombre = $("asName").value.trim();
-  const telefono = $("asTel").value.trim();
-  const dias = Number($("asDays").value || 30);
+    async function asignarEnFila(){
+      const servicio = $("asSvc").value.trim();
+      const row = Number($("asAccount").value);
+      const nombre = $("asName").value.trim();
+      const telefono = $("asTel").value.trim();
+      const dias = Number($("asDays").value || 30);
 
-  if(!servicio) return alert("Selecciona un servicio");
-  if(!Number.isFinite(row)) return alert("Selecciona una cuenta libre");
-  if(!nombre) return alert("Pon el nombre");
-  if(!telefono) return alert("Pon el teléfono");
-  if(!Number.isFinite(dias) || dias <= 0) return alert("Días inválidos");
+      if(!servicio) return alert("Selecciona un servicio");
+      if(!Number.isFinite(row)) return alert("Selecciona una cuenta libre");
+      if(!nombre) return alert("Pon el nombre");
+      if(!telefono) return alert("Pon el teléfono");
+      if(!Number.isFinite(dias) || dias <= 0) return alert("Días inválidos");
 
-  hideErr();
-  setStatus("Asignando…");
-  try {
-    const out = await api("/api/asignar", {
-      method:"POST",
-      body: JSON.stringify({ row, nombre, telefono, dias })
-    });
+      hideErr();
+      setStatus("Asignando…");
+      try{
+        const out = await api("/api/asignar", {
+          method:"POST",
+          body: JSON.stringify({ row, nombre, telefono, dias })
+        });
 
-    const msg = buildWhatsappMessage({
-      nombre: nombre.toUpperCase(),
-      servicio: out.servicio,
-      correo: out.correo,
-      contrasena: out.contrasena,
-      perfil: out.perfil,
-      pin: out.pin,
-      vence: out.vence
-    });
+        const msg = buildWhatsappMessage({
+          nombre: nombre.toUpperCase(),
+          servicio: out.servicio,
+          correo: out.correo,
+          contrasena: out.contrasena,
+          perfil: out.perfil,
+          pin: out.pin,
+          vence: out.vence
+        });
 
-    await copyText(msg);
+        await copyText(msg);
 
-    const box = $("assignMsg");
-    box.style.display = "block";
-    box.textContent = "✅ Asignada y mensaje copiado al portapapeles.\n\n" + msg;
+        const box = $("assignMsg");
+        box.style.display = "block";
+        box.textContent = "✅ Asignada y mensaje copiado al portapapeles.\n\n" + msg;
 
-    $("asName").value = "";
-    $("asTel").value = "";
+        $("asName").value = "";
+        $("asTel").value = "";
 
-    await load(true);
-    setStatus("Asignado ✅");
-  } catch(e) {
-    showErr(e.message);
-    setStatus("❌ Error");
-  }
-}
-
-// ... al final de tu script, actualizamos el listener ...
-$("btnAssign").addEventListener("click", asignarEnFila); // Antes decía 'asignar'
+        await load(true);
+        setStatus("Asignado ✅");
+      }catch(e){
+        showErr(e.message);
+        setStatus("❌ Error");
+      }
+    }
 
     function updateAutoInfo(){
       const on = $("autoOn").value === "on";
@@ -932,4 +927,3 @@ Fila: ${r.row}`;
   </script>
 </body>
 </html>
-
