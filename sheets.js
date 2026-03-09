@@ -46,39 +46,47 @@ async function getRawRows() {
 }
 
 function parseRows(rows) {
-  if (rows.length < 1) return { map: {}, rows: [] };
+  if (rows.length < 1) return { map: {}, rows: [], stats: { vencidos: 0, activos: 0, disponibles: 0 } };
   const headers = rows[0].map(h => norm(h));
   const map = {};
   headers.forEach((h, i) => { if (h) map[h] = i; });
 
-  let rawData = [];
+  let parsed = [];
+  let stats = { vencidos: 0, activos: 0, disponibles: 0 };
+
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
+    if (!r[map["servicio"]] && !r[map["correo"]]) continue; // Ignora filas totalmente vacías
+
     const rowNum = i + 1;
-    const nombreC = (r[map["nombre"]] || "").trim();
-    
-    // 1. FILTRO: Si dice "Disponible" o está vacío, no es un cliente activo
-    if (!nombreC || norm(nombreC) === "disponible") continue;
+    const nombreRaw = (r[map["nombre"]] || "").trim();
+    const esDisponible = !nombreRaw || norm(nombreRaw) === "disponible";
 
     const rawDias = String(r[map["dias restantes"]] || "0").replace(/[^0-9\-]/g, "");
     let diasVal = parseInt(rawDias);
     if (isNaN(diasVal)) diasVal = 0;
 
-    let estadoFinal = (r[map["estado"]] || "").toUpperCase().trim();
-    if (diasVal <= 0) {
+    let estadoFinal = "";
+    
+    if (esDisponible) {
+      estadoFinal = "DISPONIBLE";
+      stats.disponibles++;
+    } else if (diasVal <= 0) {
       estadoFinal = "VENCIDO";
-    } else if (estadoFinal !== "VENCIDO") {
+      stats.vencidos++;
+    } else {
       estadoFinal = "ACTIVO";
+      stats.activos++;
     }
 
-    rawData.push({
+    parsed.push({
       row: rowNum,
       servicio: r[map["servicio"]] || "",
       correo: r[map["correo"]] || "",
       contrasena: r[map["contrasena"]] || r[map["password"]] || "",
       perfil: r[map["perfil"]] || "",
       pin: r[map["pin"]] || "",
-      nombre: nombreC,
+      nombre: esDisponible ? "Disponible" : nombreRaw,
       telefono: r[map["telefono"]] || "",
       estado: estadoFinal,
       inicio: r[map["fecha de inicio"]] || "",
@@ -87,36 +95,21 @@ function parseRows(rows) {
     });
   }
 
-  // 2. ORDEN LÓGICO: Vencidos arriba, luego por días (menor a mayor)
-  rawData.sort((a, b) => {
-    if (a.estado === "VENCIDO" && b.estado !== "VENCIDO") return -1;
-    if (a.estado !== "VENCIDO" && b.estado === "VENCIDO") return 1;
+  // ORDEN: 1. Vencidos, 2. Activos (menos días primero), 3. Disponibles
+  parsed.sort((a, b) => {
+    const prioridad = { "VENCIDO": 1, "ACTIVO": 2, "DISPONIBLE": 3 };
+    if (prioridad[a.estado] !== prioridad[b.estado]) {
+      return prioridad[a.estado] - prioridad[b.estado];
+    }
     return a.dias - b.dias;
   });
 
-  return { map, rows: rawData };
+  return { map, rows: parsed, stats };
 }
 
 async function getDashboard() {
   const raw = await getRawRows();
   return parseRows(raw);
-}
-
-// ... (Resto de funciones: buildUpdatesForRow, batchUpdate, getFormulas, renovarFila, etc. se mantienen igual)
-// Asegúrate de copiar las funciones de abajo del archivo anterior si las necesitas reemplazar completas.
-async function updateFila({ rowNumber, data }) {
-  const { map } = await getDashboard();
-  const updates = buildUpdatesForRow(map, rowNumber, data);
-  await batchUpdate(updates);
-  return { ok: true };
-}
-
-async function batchUpdate(resourceValues) {
-  const sheets = await getSheets();
-  await sheets.spreadsheets.values.batchUpdate({
-    spreadsheetId: SHEET_ID,
-    resource: { valueInputOption: "USER_ENTERED", data: resourceValues }
-  });
 }
 
 function buildUpdatesForRow(map, rowNumber, data) {
@@ -129,6 +122,14 @@ function buildUpdatesForRow(map, rowNumber, data) {
     }
   }
   return updates;
+}
+
+async function batchUpdate(resourceValues) {
+  const sheets = await getSheets();
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: SHEET_ID,
+    resource: { valueInputOption: "USER_ENTERED", data: resourceValues }
+  });
 }
 
 function getFormulas(dias) {
@@ -146,6 +147,13 @@ async function renovarFila({ rowNumber, dias }) {
   const updates = buildUpdatesForRow(map, rowNumber, {
     "Estado": "ACTIVO", "Fecha de inicio": formulas.inicio, "Fecha de vencimiento": formulas.vencimiento, "Días restantes": formulas.dias
   });
+  await batchUpdate(updates);
+  return { ok: true };
+}
+
+async function updateFila({ rowNumber, data }) {
+  const { map } = await getDashboard();
+  const updates = buildUpdatesForRow(map, rowNumber, data);
   await batchUpdate(updates);
   return { ok: true };
 }
@@ -174,6 +182,8 @@ async function eliminarCliente(rowNumber) {
 async function reasignarCuenta({ fromRow, toRow }) {
   const { map, rows } = await getDashboard();
   const src = rows.find(r => Number(r.row) === Number(fromRow));
+  
+  // Obtenemos datos frescos de la cuenta destino (la disponible)
   const rawRows = await getRawRows();
   const headers = rawRows[0].map(h => norm(h));
   const localMap = {};
