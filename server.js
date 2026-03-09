@@ -5,7 +5,10 @@ const { getDashboard, renovarFila, asignarEnFila, eliminarCliente, reasignarCuen
 
 const app = express();
 app.use(express.json());
-app.use(express.static(__dirname)); // Sirve index.html desde la raíz
+
+// Servir archivos estáticos desde la raíz y desde public (por si acaso)
+app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, "public")));
 
 function auth(req, res, next) {
   const key = req.headers["x-admin-key"];
@@ -20,11 +23,14 @@ app.get("/api/dashboard", auth, async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ... (tus otras rutas POST /api/asignar, etc.)
+// Rutas API (Asignar, Renovar, etc. - Mantenlas como las tienes)
 
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+  // Busca el index.html primero en raíz, luego en public
+  res.sendFile(path.join(__dirname, "index.html"), (err) => {
+    if (err) res.sendFile(path.join(__dirname, "public", "index.html"));
+  });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Servidor listo en puerto " + PORT));
+app.listen(PORT, () => console.log("Servidor iniciado en puerto " + PORT));
