@@ -1,236 +1,231 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SISTEMA STREAMING PRO</title>
-  <style>
-    :root{
-      --bg0:#070A16; --bg1:#0B1026; --bg2:#0E173A; --line: rgba(255,255,255,.10);
-      --txt:#F6F8FF; --muted:#B5C0FF; --red:#ff3b5f; --green:#18c964;
-      --yellow:#f5b301; --cyan:#23d5f2; --blue:#4f8cff; --purple:#b094ff;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family: system-ui, sans-serif; color:var(--txt); background: var(--bg0);
-      background: radial-gradient(circle at top right, rgba(79,140,255,.15), transparent), linear-gradient(var(--bg0), var(--bg1));
-      min-height: 100vh; padding: 20px;
-    }
-    .container{ max-width: 1300px; margin: 0 auto; }
-    
-    /* Header y KPIs */
-    .header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .kpis{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
-    .kpi{ background: var(--bg2); padding: 20px; border-radius: 20px; border: 1px solid var(--line); text-align: center; }
-    .kpi b{ display: block; font-size: 35px; margin-bottom: 5px; }
-    .kpi span{ font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: bold; }
-    
-    /* Panel de Control */
-    .panel{ background: rgba(11, 16, 38, 0.8); border-radius: 24px; padding: 25px; border: 1px solid var(--line); backdrop-filter: blur(10px); }
-    .grid-assign{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end; margin-bottom: 20px; }
-    
-    input, select{ width: 100%; background: var(--bg0); border: 1px solid var(--line); color: #fff; padding: 12px; border-radius: 12px; outline: none; }
-    input:focus{ border-color: var(--blue); }
-    
-    .btn-main{ background: linear-gradient(135deg, var(--green), var(--cyan)); color: #000; border: 0; padding: 14px; border-radius: 12px; font-weight: 900; cursor: pointer; }
-    
-    /* Tabla */
-    .table-scroll{ overflow-x: auto; margin-top: 20px; }
-    table{ width: 100%; border-collapse: collapse; min-width: 900px; }
-    th{ text-align: left; padding: 15px; color: var(--muted); font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--line); }
-    td{ padding: 15px; border-bottom: 1px solid var(--line); font-size: 14px; }
-    
-    /* Botones de Acción */
-    .actions{ display: flex; gap: 8px; }
-    .a-btn{ border: 0; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; color: #000; }
-    .btn-copy{ background: var(--cyan); }
-    .btn-renew{ background: var(--green); }
-    .btn-move{ background: var(--yellow); }
-    .btn-del{ background: var(--red); color: #fff; }
 
-    .status-tag{ padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 10px; }
-    .tag-vencido{ background: rgba(255,59,95,.1); color: var(--red); }
-    .tag-activo{ background: rgba(24,201,100,.1); color: var(--green); }
-  </style>
+<head>
+
+<meta charset="UTF-8">
+<title>Panel Streaming</title>
+
+<style>
+
+body{
+font-family: Arial;
+background:#0f172a;
+color:white;
+padding:30px;
+}
+
+h1{
+margin-bottom:20px;
+}
+
+.card{
+background:#1e293b;
+padding:20px;
+border-radius:10px;
+margin-bottom:20px;
+}
+
+input{
+padding:10px;
+margin:5px;
+border:none;
+border-radius:5px;
+}
+
+button{
+padding:10px 20px;
+border:none;
+border-radius:5px;
+background:#22c55e;
+color:white;
+cursor:pointer;
+}
+
+button:hover{
+background:#16a34a;
+}
+
+table{
+width:100%;
+margin-top:20px;
+border-collapse:collapse;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #334155;
+text-align:left;
+}
+
+th{
+background:#020617;
+}
+
+</style>
+
 </head>
+
 <body>
 
-<div class="container">
-  <div class="header">
-    <h2>SISTEMA <span style="color:var(--blue)">STREAMING</span></h2>
-    <div style="display:flex; gap:10px">
-      <input type="password" id="adminKey" placeholder="Admin Key" style="width:150px">
-      <button onclick="load()" class="btn-main" style="padding:10px 15px">🔄</button>
-    </div>
-  </div>
+<h1>🎬 PANEL STREAMING</h1>
 
-  <div class="kpis">
-    <div class="kpi"><b id="cActivos">0</b><span>Activos</span></div>
-    <div class="kpi" style="border-color:var(--red)"><b id="cVencidos" style="color:var(--red)">0</b><span>Vencidos</span></div>
-    <div class="kpi"><b id="cTotal">0</b><span>Total Clientes</span></div>
-  </div>
+<div class="card">
 
-  <div class="panel">
-    <div class="grid-assign">
-      <div><span>Servicio</span><select id="asSvc" onchange="actualizarCuentas()"></select></div>
-      <div><span>Cuenta Libre</span><select id="asAccount"></select></div>
-      <div><span>Cliente</span><input id="asName" placeholder="Nombre..."></div>
-      <div><span>Días</span><input id="asDays" type="number" value="30"></div>
-      <button id="btnAssign" onclick="asignarEnFila()" class="btn-main">✓ REGISTRAR VENTA</button>
-    </div>
+<h3>Asignar Cuenta</h3>
 
-    <div style="margin: 20px 0;">
-      <input id="q" oninput="render()" placeholder="Buscar por nombre, correo o servicio..." style="background:var(--bg2)">
-    </div>
+<input id="nombre" placeholder="Nombre">
+<input id="telefono" placeholder="Teléfono">
+<input id="servicio" placeholder="Servicio">
 
-    <div id="msg" style="font-size:12px; color:var(--muted); margin-bottom:10px">Iniciando sistema...</div>
+<button onclick="asignar()">Asignar</button>
 
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Servicio</th>
-            <th>Cuenta / Perfil</th>
-            <th>Cliente</th>
-            <th>Vencimiento</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tb"></tbody>
-      </table>
-    </div>
-  </div>
+</div>
+
+<div class="card">
+
+<h3>Liberar Cuenta</h3>
+
+<input id="codigoLiberar" placeholder="Código">
+
+<button onclick="liberar()">Liberar</button>
+
+</div>
+
+<div class="card">
+
+<h3>Renovar Cuenta</h3>
+
+<input id="codigoRenovar" placeholder="Código">
+<input id="diasRenovar" placeholder="Días">
+
+<button onclick="renovar()">Renovar</button>
+
+</div>
+
+<div class="card">
+
+<h3>Lista de Cuentas</h3>
+
+<button onclick="cargar()">Actualizar</button>
+
+<table id="tabla">
+
+<thead>
+
+<tr>
+<th>Código</th>
+<th>Nombre</th>
+<th>Teléfono</th>
+<th>Servicio</th>
+<th>Correo</th>
+<th>Perfil</th>
+<th>Vencimiento</th>
+<th>Estado</th>
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
 </div>
 
 <script>
-  let allRows = [];
-  let availableMap = {};
-  const $ = id => document.getElementById(id);
 
-  async function api(path, opts = {}) {
-    const key = $("adminKey").value;
-    const res = await fetch(path, {
-      ...opts,
-      headers: { "Content-Type": "application/json", "x-admin-key": key, ...(opts.headers || {}) }
-    });
-    if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Error"); }
-    return await res.json();
-  }
+const API="https://TU-APP-RAILWAY.up.railway.app"
 
-  async function load() {
-    $("msg").textContent = "Cargando datos...";
-    try {
-      const data = await api("/api/dashboard");
-      allRows = data.rows || [];
-      availableMap = {};
-      
-      let activos = 0, vencidos = 0;
-      
-      allRows.forEach(r => {
-        const isDisp = String(r.nombre).toLowerCase().trim() === "disponible";
-        if (isDisp) {
-          if (!availableMap[r.servicio]) availableMap[r.servicio] = [];
-          availableMap[r.servicio].push(r);
-        } else {
-          if (r.bucket === "vencidos") vencidos++; else activos++;
-        }
-      });
+async function asignar(){
 
-      $("cActivos").textContent = activos;
-      $("cVencidos").textContent = vencidos;
-      $("cTotal").textContent = activos + vencidos;
+const nombre=document.getElementById("nombre").value
+const telefono=document.getElementById("telefono").value
+const servicio=document.getElementById("servicio").value
 
-      // Llenar Servicios
-      const svcs = Object.keys(availableMap).sort();
-      $("asSvc").innerHTML = `<option value="">Seleccionar...</option>` + 
-        svcs.map(s => `<option value="${s}">${s} (${availableMap[s].length})</option>`).join("");
-      
-      render();
-      $("msg").textContent = "Sincronizado con Google Sheets ✅";
-    } catch (e) { $("msg").textContent = "Error: " + e.message; }
-  }
+const res=await fetch(API+"/asignar",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({nombre,telefono,servicio})
+})
 
-  function actualizarCuentas() {
-    const svc = $("asSvc").value;
-    const list = availableMap[svc] || [];
-    $("asAccount").innerHTML = list.map(r => `<option value="${r.row}">${r.correo} (P:${r.perfil})</option>`).join("");
-  }
+const data=await res.json()
 
-  function render() {
-    const q = $("q").value.toLowerCase();
-    const tb = $("tb");
-    tb.innerHTML = "";
+alert(JSON.stringify(data))
 
-    allRows.filter(r => (r.nombre + r.correo + r.servicio).toLowerCase().includes(q)).forEach(r => {
-      const isD = String(r.nombre).toLowerCase().trim() === "disponible";
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td style="color:var(--cyan); font-weight:bold">${r.servicio}</td>
-        <td><b>${r.correo}</b><br><small style="color:var(--muted)">P:${r.perfil} | PIN:${r.pin}</small></td>
-        <td>${isD ? '<span style="color:var(--muted)">DISPONIBLE</span>' : `<b>${r.nombre}</b>`}</td>
-        <td><span class="status-tag ${r.bucket==='vencidos'?'tag-vencido':'tag-activo'}">${r.dias} DÍAS</span></td>
-        <td>
-          <div class="actions">
-            <button class="a-btn btn-copy" onclick="copiarRow(${r.row})">COPIAR</button>
-            ${!isD ? `<button class="a-btn btn-renew" onclick="renovarRow(${r.row})">RENOVAR</button>` : ''}
-            ${!isD ? `<button class="a-btn btn-move" onclick="reasignarRow(${r.row})">MOVER</button>` : ''}
-            <button class="a-btn btn-del" onclick="borrarRow(${r.row})">BORRAR</button>
-          </div>
-        </td>
-      `;
-      tb.appendChild(tr);
-    });
-  }
+cargar()
 
-  // FUNCIONES GLOBALES DE BOTONES
-  window.asignarEnFila = async () => {
-    const row = $("asAccount").value;
-    const nombre = $("asName").value;
-    const dias = $("asDays").value;
-    if (!row || !nombre) return alert("Falta elegir cuenta o poner nombre");
-    
-    try {
-      await api("/api/asignar", { method: "POST", body: JSON.stringify({ row: Number(row), nombre, dias: Number(dias) }) });
-      alert("✅ Venta registrada");
-      load();
-    } catch(e) { alert(e.message); }
-  };
+}
 
-  window.copiarRow = async (rowId) => {
-    const r = allRows.find(x => x.row == rowId);
-    const txt = `*DETALLES DE TU CUENTA*\n\nServicio: ${r.servicio}\nCorreo: ${r.correo}\nClave: ${r.contrasena}\nPerfil: ${r.perfil}\nPIN: ${r.pin}\n\n*¡Gracias por su compra!*`;
-    await navigator.clipboard.writeText(txt);
-    alert("📋 Datos copiados");
-  };
+async function liberar(){
 
-  window.renovarRow = async (row) => {
-    const d = prompt("¿Días a renovar?", "30");
-    if (!d) return;
-    try {
-      await api("/api/renovar", { method: "POST", body: JSON.stringify({ row, dias: Number(d) }) });
-      load();
-    } catch(e) { alert(e.message); }
-  };
+const codigo=document.getElementById("codigoLiberar").value
 
-  window.borrarRow = async (row) => {
-    if (!confirm("¿Deseas borrar al cliente y liberar la cuenta?")) return;
-    try {
-      await api("/api/delete", { method: "POST", body: JSON.stringify({ row }) });
-      load();
-    } catch(e) { alert(e.message); }
-  };
+const res=await fetch(API+"/liberar",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({codigo})
+})
 
-  window.reasignarRow = async (fromRow) => {
-    const toRow = prompt("Ingrese el número de FILA de la cuenta nueva:");
-    if (!toRow) return;
-    try {
-      await api("/api/reassign", { method: "POST", body: JSON.stringify({ fromRow, toRow: Number(toRow) }) });
-      load();
-    } catch(e) { alert(e.message); }
-  };
+alert("Cuenta liberada")
 
-  window.onload = load;
+cargar()
+
+}
+
+async function renovar(){
+
+const codigo=document.getElementById("codigoRenovar").value
+const dias=document.getElementById("diasRenovar").value
+
+const res=await fetch(API+"/renovar",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({codigo,dias})
+})
+
+alert("Cuenta renovada")
+
+cargar()
+
+}
+
+async function cargar(){
+
+const res=await fetch(API+"/cuentas")
+
+const data=await res.json()
+
+const tbody=document.querySelector("#tabla tbody")
+
+tbody.innerHTML=""
+
+data.forEach(row=>{
+
+const tr=document.createElement("tr")
+
+tr.innerHTML=`
+
+<td>${row[0]||""}</td>
+<td>${row[1]||""}</td>
+<td>${row[2]||""}</td>
+<td>${row[3]||""}</td>
+<td>${row[4]||""}</td>
+<td>${row[6]||""}</td>
+<td>${row[9]||""}</td>
+<td>${row[11]||""}</td>
+
+`
+
+tbody.appendChild(tr)
+
+})
+
+}
+
+cargar()
+
 </script>
 
 </body>
+
 </html>
