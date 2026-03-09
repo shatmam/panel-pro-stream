@@ -38,7 +38,6 @@
 
     .wrap{max-width:1400px;margin:0 auto;padding:22px 18px 70px}
 
-    /* Tu diseño de Header */
     .topbar{ display:flex;align-items:center;justify-content:space-between; gap:14px;flex-wrap:wrap; margin-bottom:18px; }
     .brand{display:flex;align-items:center;gap:14px;}
     .logo{
@@ -51,7 +50,6 @@
     .title h1{margin:0;font-size:22px;line-height:1}
     .title .sub{margin:0;color:var(--muted);font-size:12px}
 
-    /* KPIs */
     .kpis{ display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:16px; margin-bottom:18px; }
     .kpi{
       background: rgba(12,16,35,.62); border:1px solid rgba(255,255,255,.10);
@@ -61,7 +59,6 @@
     .kpi.red .n{ color: var(--red); }
     .kpi .lbl{ margin-top:6px; color: rgba(181,192,255,.85); font-size:12px; letter-spacing:1.4px; text-transform:uppercase; }
 
-    /* Panel de Asignación (Lo que te gustó) */
     .panel{ background: rgba(12,16,35,.62); border:1px solid rgba(255,255,255,.10); border-radius: 22px; padding:18px; }
     .assign{ display:grid; grid-template-columns: 1.3fr 1.3fr 1.2fr auto; gap:14px; align-items:end; margin-bottom:14px; }
     .assign2{ display:grid; grid-template-columns: 2fr 1fr; gap:14px; align-items:end; margin-bottom:16px; }
@@ -77,23 +74,30 @@
     }
     .btn-green{ background: linear-gradient(135deg, rgba(24,201,100,.95), rgba(35,213,242,.75)); }
 
-    /* Tabla */
     .tablewrap{ border-radius: 18px; border:1px solid rgba(255,255,255,.10); overflow:auto; background: rgba(9,12,28,.35); }
     table{ width:100%; border-collapse:collapse; min-width: 1000px; }
     th, td{ padding: 16px 14px; border-bottom:1px solid rgba(255,255,255,.06); font-size: 13px; }
     th{ color: rgba(181,192,255,.88); text-transform:uppercase; font-size:11px; letter-spacing:.9px; }
 
-    .actions{ display:flex; gap:8px; }
-    .a-btn{ border:0; cursor:pointer; padding:8px 12px; border-radius: 10px; font-weight:1000; font-size:11px; color:#06101a; }
-    .a-copy{ background: var(--cyan); }
-    .a-renew{ background: var(--green); }
-    .a-del{ background: var(--red); color:#fff; }
-    .a-move{ background: var(--yellow); }
+    /* RESTAURACIÓN DE BOTONES ORIGINALES */
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; }
+    .a-btn{
+      border:0; cursor:pointer; padding:10px 14px; border-radius: 12px;
+      font-weight:1000; font-size:12px; color:#06101a; transition:.12s;
+      user-select:none; white-space:nowrap;
+    }
+    .a-btn:hover{filter:brightness(1.06)}
+    .a-btn:active{transform:translateY(1px)}
+    
+    .a-copy{ background: linear-gradient(135deg, rgba(35,213,242,.98), rgba(79,140,255,.92)); }
+    .a-renew{ background: linear-gradient(135deg, rgba(24,201,100,.98), rgba(24,201,100,.70)); }
+    .a-move{ background: linear-gradient(135deg, rgba(245,179,1,.98), rgba(245,179,1,.72)); }
+    .a-del{ background: linear-gradient(135deg, rgba(255,59,95,.98), rgba(255,59,95,.72)); color:#fff; }
 
     .mini{ color: rgba(181,192,255,.75); font-size:12px; }
-    .badge-status{ padding:4px 10px; border-radius: 999px; font-weight:800; font-size:11px; }
-    .badge-status.red{ background: rgba(255,59,95,.14); color:var(--red); }
-    .badge-status.green{ background: rgba(24,201,100,.14); color:var(--green); }
+    .badge-status{ padding:7px 12px; border-radius: 999px; font-weight:1000; font-size:12px; border:1px solid rgba(255,255,255,.10); }
+    .badge-status.red{ background: rgba(255,59,95,.14); border-color: rgba(255,59,95,.32); color:#ffd5dc; }
+    .badge-status.green{ background: rgba(24,201,100,.14); border-color: rgba(24,201,100,.32); color:#d6ffe8; }
   </style>
 </head>
 
@@ -155,7 +159,7 @@
               <th>CUENTA</th>
               <th>CLIENTE</th>
               <th>ESTADO</th>
-              <th>ACCIONES</th>
+              <th>ACCIONES DE CONTROL</th>
             </tr>
           </thead>
           <tbody id="tb"></tbody>
@@ -182,10 +186,8 @@
       $("status").textContent = "Sincronizando...";
       try {
         const data = await api("/api/dashboard");
-        // Filtramos para no mostrar filas vacías del Excel
         allRows = (data.rows || []).filter(r => (r.servicio || r.correo || r.nombre));
 
-        // Contadores Reales (Excluyendo los "Disponible")
         const c = { vencidos: 0, activos: 0, total: 0 };
         availableMapByService = {};
 
@@ -216,14 +218,9 @@
       const svcs = Object.keys(availableMapByService).sort();
       const selSvc = $("asSvc");
       const currentSvc = selSvc.value;
-      
       selSvc.innerHTML = `<option value="">Seleccionar...</option>` + 
         svcs.map(s => `<option value="${s}">${s} (${availableMapByService[s].length})</option>`).join("");
-      
-      if (currentSvc) {
-        selSvc.value = currentSvc;
-        fillAccounts();
-      }
+      if (currentSvc) { selSvc.value = currentSvc; fillAccounts(); }
     }
 
     function fillAccounts() {
@@ -246,15 +243,16 @@
         const isD = String(r.nombre).toLowerCase().trim() === "disponible";
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td style="color:var(--cyan); font-weight:bold">${r.servicio}</td>
-          <td><div>${r.correo}</div><div class="mini">P:${r.perfil} | PIN:${r.pin}</div></td>
-          <td>${isD ? '<span style="color:var(--muted)">DISPONIBLE</span>' : `<b>${r.nombre}</b><div class="mini">${r.telefono}</div>`}</td>
+          <td style="color:var(--cyan); font-weight:1000; letter-spacing:.4px">${r.servicio}</td>
+          <td><div><b>${r.correo}</b></div><div class="mini">Perfil: ${r.perfil} • PIN: ${r.pin}</div></td>
+          <td>${isD ? '<b style="color:rgba(181,192,255,.9)">Disponible</b>' : `<b>${r.nombre}</b><div class="mini">${r.telefono}</div>`}</td>
           <td><span class="badge-status ${r.bucket === 'vencidos' ? 'red' : 'green'}">${r.dias} DÍAS</span></td>
           <td>
             <div class="actions">
-              <button class="a-btn a-copy" onclick="copyRow(${r.row})">📋</button>
-              ${r.bucket === 'vencidos' ? `<button class="a-btn a-renew" onclick="renovar(${r.row})">🔄</button>` : ''}
-              <button class="a-btn a-del" onclick="liberar(${r.row})">🗑️</button>
+              <button class="a-btn a-copy" onclick="copyRow(${r.row})">COPIAR</button>
+              ${!isD ? `<button class="a-btn a-renew" onclick="renovar(${r.row})">RENOVAR</button>` : ''}
+              ${!isD ? `<button class="a-btn a-move" onclick="reassignRow(${r.row})">REASIGNAR</button>` : ''}
+              <button class="a-btn a-del" onclick="liberar(${r.row})">BORRAR</button>
             </div>
           </td>
         `;
@@ -267,18 +265,26 @@
       const nombre = $("asName").value;
       const telefono = $("asTel").value;
       const dias = $("asDays").value;
-
       if (!row || !nombre) return alert("Faltan datos");
-
       const res = await api("/api/asignar", {
         method: "POST",
         body: JSON.stringify({ row: Number(row), nombre, telefono, dias: Number(dias) })
       });
+      if (res.ok) { alert("✅ Venta registrada"); load(); }
+    }
 
-      if (res.ok) {
-        alert("✅ Venta registrada y mensaje copiado");
-        load();
-      }
+    // Funciones de botones (necesitan estar conectadas a tus rutas de API)
+    async function renovar(row) {
+      const dias = prompt("¿Días a renovar?", "30");
+      if (!dias) return;
+      const res = await api("/api/renovar", { method: "POST", body: JSON.stringify({ row, dias: Number(dias) }) });
+      if (res.ok) load();
+    }
+
+    async function liberar(row) {
+      if (!confirm("¿Liberar esta cuenta?")) return;
+      const res = await api("/api/delete", { method: "POST", body: JSON.stringify({ row }) });
+      if (res.ok) load();
     }
 
     $("asSvc").onchange = fillAccounts;
