@@ -6,93 +6,240 @@ const TAB = process.env.SHEET_TAB || "Clientes";
 const CREDENTIALS_PATH = process.env.CREDENTIALS_PATH || "./credentials.json";
 
 function norm(s) {
-  return String(s ?? "").toLowerCase().trim()
+  return String(s ?? "")
+    .toLowerCase()
+    .trim()
     .replace(/\s+/g, " ")
-    .replace(/[áàä]/g, "a").replace(/[éèë]/g, "e").replace(/[íìï]/g, "i").replace(/[óòö]/g, "o").replace(/[úùü]/g, "u");
+    .replace(/[áàä]/g, "a")
+    .replace(/[éèë]/g, "e")
+    .replace(/[íìï]/g, "i")
+    .replace(/[óòö]/g, "o")
+    .replace(/[úùü]/g, "u");
+}
+
+function requireEnv() {
+  if (!SHEET_ID) throw new Error("Falta SHEET_ID");
+  if (!fs.existsSync(CREDENTIALS_PATH)) throw new Error("No existe credentials.json");
 }
 
 async function getClient() {
-  if (process.env.GOOGLE_CREDENTIALS_JSON) {
-    const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-    return new google.auth.GoogleAuth({
-      credentials: creds,
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-    }).getClient();
-  }
-  return new google.auth.GoogleAuth({
-    keyFile: CREDENTIALS_PATH,
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  }).getClient();
-}
+  requireEnv();
 
-async function getSheets() {
-  const auth = await getClient();
+  const creds = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
+
+  const auth = new google.auth.GoogleAuth({
+    credentials: creds,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+  });
+
   return google.sheets({ version: "v4", auth });
 }
 
-function parseRows(rows) {
-  if (rows.length < 1) return { map: {}, rows: [], availableTotal: 0, availableByService: {} };
-  
-  const headers = rows[0].map(h => norm(h));
-  const map = {};
-  headers.forEach((h, i) => { if (h) map[h] = i; });
+function isDisponible(row) {
+  const n = norm(row.nombre || "");
+  return n === "disponible" || n === "" || n === "-";
+}
 
-  let parsed = [];
-  let availableTotal = 0;
-  let availableByService = {};
+function parseDias(x) {
+  const t = String(x ?? "").trim();
+  if (!t) return NaN;
+  const n = Number(t.replace(",", "."));
+  return Number.isFinite(n) ? n : NaN;
+}
 
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    if (!r[map["servicio"]] && !r[map["correo"]]) continue;
+function bucketByDias(d) {
+  if (Number.isFinite(d) && d <= 0) return "vencidos";
+  if (Number.isFinite(d) && d <= 3) return "porvencer";
+  return "activos";
+}
 
-    const nombreRaw = (r[map["nombre"]] || "").trim();
-    const esDisponible = norm(nombreRaw) === "disponible" || !nombreRaw;
-    
-    const rawDias = String(r[map["dias restantes"]] || "0").replace(/[^0-9\-]/g, "");
-    let diasVal = parseInt(rawDias) || 0;
+function toISODateOnly(d) {
+  return d.toISOString().slice(0, 10);
+}
 
-    let bucket = "activos";
-    if (esDisponible) {
-      bucket = "disponible";
-      availableTotal++;
-      const svc = (r[map["servicio"]] || "OTROS").trim().toUpperCase();
-      availableByService[svc] = (availableByService[svc] || 0) + 1;
-    } else if (diasVal <= 0) {
-      bucket = "vencidos";
-    } else if (diasVal <= 3) {
-      bucket = "porvencer";
-    }
+function today0() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
-    parsed.push({
-      row: i + 1,
-      servicio: r[map["servicio"]] || "",
-      correo: r[map["correo"]] || "",
-      contrasena: r[map["contrasena"]] || r[map["password"]] || "",
-      perfil: r[map["perfil"]] || "",
-      pin: r[map["pin"]] || "",
-      nombre: nombreRaw,
-      telefono: r[map["telefono"]] || "",
-      vencimiento: r[map["fecha de vencimiento"]] || "",
-      dias: diasVal,
-      bucket: bucket
-    });
+function colLetter(n) {
+  let s = "";
+  while (n > 0) {
+    const m = (n - 1) % 26;
+    s = String.fromCharCode(65 + m) + s;
+    n = Math.floor((n - 1) / 26);
   }
+  return s;
+}
 
-  // ORDEN: Vencidos -> Por Vencer -> Activos -> Disponibles
-  parsed.sort((a, b) => {
-    const p = { "vencidos": 1, "porvencer": 2, "activos": 3, "disponible": 4 };
-    return p[a.bucket] - p[b.bucket] || a.dias - b.dias;
+async function readAll() {
+
+  const sheets = await getClient();
+
+  const resp = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${TAB}!A:Z`
   });
 
-  return { map, rows: parsed, availableTotal, availableByService };
+  const values = resp.data.values || [];
+
+  const header = values[0];
+  const rows = [];
+
+  values.slice(1).forEach((r, i) => {
+
+    if (!r.some(c => String(c || "").trim())) return;
+
+    const dias = parseDias(r[10]);
+
+    rows.push({
+      row: i + 2,
+      codigo: r[0],
+      servicio: r[1],
+      correo: r[2],
+      contrasena: r[3],
+      perfil: r[4],
+      pin: r[5],
+      nombre: r[6],
+      telefono: r[7],
+      inicio: r[8],
+      vencimiento: r[9],
+      dias: r[10],
+      diasNum: dias,
+      bucket: bucketByDias(dias)
+    });
+
+  });
+
+  return { rows };
 }
 
-async function getDashboard() {
-  const sheets = await getSheets();
-  const res = await sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: `${TAB}!A:Z` });
-  return parseRows(res.data.values || []);
+async function asignarEnFila({ rowNumber, nombre, telefono, dias = 30 }) {
+
+  const { rows } = await readAll();
+
+  const r = rows.find(x => x.row == rowNumber);
+
+  if (!r) throw new Error("Fila no encontrada");
+  if (!isDisponible(r)) throw new Error("Cuenta no disponible");
+
+  const sheets = await getClient();
+
+  const hoy = today0();
+  const vence = new Date(hoy.getTime() + dias * 86400000);
+
+  const updates = [
+    [`${TAB}!G${rowNumber}`, nombre],
+    [`${TAB}!H${rowNumber}`, telefono],
+    [`${TAB}!I${rowNumber}`, toISODateOnly(hoy)],
+    [`${TAB}!J${rowNumber}`, toISODateOnly(vence)]
+  ];
+
+  for (const u of updates) {
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: u[0],
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [[u[1]]] }
+    });
+
+  }
+
+  return {
+    servicio: r.servicio,
+    correo: r.correo,
+    contrasena: r.contrasena,
+    perfil: r.perfil,
+    pin: r.pin,
+    vence: toISODateOnly(vence)
+  };
+
 }
 
-// ... (Aquí irían tus funciones de renovar, asignar, etc. que ya tienes)
-// Solo asegúrate de exportar al final:
-module.exports = { getDashboard };
+async function eliminarCliente(rowNumber) {
+
+  const sheets = await getClient();
+
+  const updates = [
+    [`${TAB}!G${rowNumber}`, "Disponible"],
+    [`${TAB}!H${rowNumber}`, ""],
+    [`${TAB}!I${rowNumber}`, ""],
+    [`${TAB}!J${rowNumber}`, ""],
+    [`${TAB}!K${rowNumber}`, ""]
+  ];
+
+  for (const u of updates) {
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: u[0],
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [[u[1]]] }
+    });
+
+  }
+
+  return { ok: true };
+
+}
+
+async function reasignarCuenta({ fromRow, toRow }) {
+
+  const { rows } = await readAll();
+
+  const src = rows.find(r => r.row == fromRow);
+  const dest = rows.find(r => r.row == toRow);
+
+  if (!src) throw new Error("Origen no encontrado");
+  if (!dest) throw new Error("Destino no encontrado");
+
+  if (!isDisponible(dest)) throw new Error("Destino no disponible");
+
+  if (!norm(dest.servicio).includes(norm(src.servicio)))
+    throw new Error("Servicios no coinciden");
+
+  const sheets = await getClient();
+
+  const updates = [
+
+    [`${TAB}!G${toRow}`, src.nombre],
+    [`${TAB}!H${toRow}`, src.telefono],
+    [`${TAB}!I${toRow}`, src.inicio],
+    [`${TAB}!J${toRow}`, src.vencimiento],
+
+    [`${TAB}!G${fromRow}`, "Disponible"],
+    [`${TAB}!H${fromRow}`, ""],
+    [`${TAB}!I${fromRow}`, ""],
+    [`${TAB}!J${fromRow}`, ""]
+
+  ];
+
+  for (const u of updates) {
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: u[0],
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [[u[1]]] }
+    });
+
+  }
+
+  return {
+    servicio: dest.servicio,
+    correo: dest.correo,
+    contrasena: dest.contrasena,
+    perfil: dest.perfil,
+    pin: dest.pin
+  };
+
+}
+
+module.exports = {
+  readAll,
+  asignarEnFila,
+  eliminarCliente,
+  reasignarCuenta
+};
