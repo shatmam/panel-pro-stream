@@ -3,189 +3,234 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Super Streaming Admin</title>
+  <title>SISTEMA STREAMING PRO</title>
   <style>
-    /* Se mantienen tus estilos originales para no dañar el diseño */
-    :root{ --bg0:#070A16; --bg1:#0B1026; --bg2:#0E173A; --line: rgba(255,255,255,.10); --txt:#F6F8FF; --muted:#B5C0FF; --red:#ff3b5f; --green:#18c964; --yellow:#f5b301; --cyan:#23d5f2; --blue:#4f8cff; --purple:#b094ff; --shadow: 0 20px 70px rgba(0,0,0,.55); --shadow2: 0 10px 30px rgba(0,0,0,.45); }
-    *{box-sizing:border-box} html,body{height:100%}
-    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--txt); background: radial-gradient(900px 520px at 12% 8%, rgba(79,140,255,.22), transparent 60%), radial-gradient(900px 600px at 88% 8%, rgba(176,148,255,.20), transparent 55%), radial-gradient(820px 520px at 50% 92%, rgba(35,213,242,.12), transparent 62%), linear-gradient(180deg, var(--bg0), var(--bg1) 40%, var(--bg2)); }
-    .wrap{max-width:1400px;margin:0 auto;padding:22px 18px 70px}
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px;}
-    .brand{display:flex;align-items:center;gap:14px;}
-    .logo{width:50px;height:50px;border-radius:18px;display:grid;place-items:center;font-weight:1000;background: linear-gradient(135deg, rgba(79,140,255,.95), rgba(176,148,255,.95)); border:1px solid rgba(255,255,255,.10); box-shadow: 0 18px 50px rgba(79,140,255,.16);}
-    .title h1{margin:0;font-size:22px;line-height:1} .title .sub{margin:0;color:var(--muted);font-size:12px}
-    .kpis{display:grid;grid-template-columns: repeat(3, minmax(0, 1fr));gap:16px;margin-bottom:18px;}
-    .kpi{background: rgba(12,16,35,.62); border:1px solid rgba(255,255,255,.10); border-radius: 22px; padding: 22px 18px; text-align:center; backdrop-filter: blur(16px);}
-    .kpi .n{font-size:44px;font-weight:1000;margin:0;} .kpi.red .n{ color: var(--red); }
-    .panel{background: rgba(12,16,35,.62); border:1px solid rgba(255,255,255,.10); border-radius: 22px; padding:18px;}
-    .assign{display:grid;grid-template-columns: 1.3fr 1.3fr 1.2fr auto;gap:14px;align-items:end;margin-bottom:14px;}
-    .input, select{width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background: rgba(10,14,35,.65);color:var(--txt);outline:none;}
-    .btn{border:0;cursor:pointer;padding:12px 16px;border-radius:14px;font-weight:900;background: linear-gradient(135deg, rgba(35,213,242,.95), rgba(79,140,255,.95));color:#06101a;}
-    .tablewrap{border-radius: 18px; border:1px solid rgba(255,255,255,.10); overflow:auto; background: rgba(9,12,28,.35);}
-    table{width:100%;border-collapse:collapse;min-width: 1000px;}
-    th, td{padding: 16px 14px; border-bottom:1px solid rgba(255,255,255,.06); font-size: 13px;}
-    .actions{display:flex;gap:8px;}
-    .a-btn{border:0;cursor:pointer;padding:8px 12px;border-radius: 10px;font-weight:1000;font-size:11px;color:#06101a;}
-    .a-copy{ background: var(--cyan); } .a-renew{ background: var(--green); } .a-del{ background: var(--red); color:#fff; } .a-move{ background: var(--yellow); }
-    .badge-status{padding:4px 10px;border-radius: 999px;font-weight:800;font-size:11px;}
-    .badge-status.red{background: rgba(255,59,95,.14); color:var(--red);} .badge-status.green{background: rgba(24,201,100,.14); color:var(--green);}
+    :root{
+      --bg0:#070A16; --bg1:#0B1026; --bg2:#0E173A; --line: rgba(255,255,255,.10);
+      --txt:#F6F8FF; --muted:#B5C0FF; --red:#ff3b5f; --green:#18c964;
+      --yellow:#f5b301; --cyan:#23d5f2; --blue:#4f8cff; --purple:#b094ff;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, sans-serif; color:var(--txt); background: var(--bg0);
+      background: radial-gradient(circle at top right, rgba(79,140,255,.15), transparent), linear-gradient(var(--bg0), var(--bg1));
+      min-height: 100vh; padding: 20px;
+    }
+    .container{ max-width: 1300px; margin: 0 auto; }
+    
+    /* Header y KPIs */
+    .header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .kpis{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .kpi{ background: var(--bg2); padding: 20px; border-radius: 20px; border: 1px solid var(--line); text-align: center; }
+    .kpi b{ display: block; font-size: 35px; margin-bottom: 5px; }
+    .kpi span{ font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: bold; }
+    
+    /* Panel de Control */
+    .panel{ background: rgba(11, 16, 38, 0.8); border-radius: 24px; padding: 25px; border: 1px solid var(--line); backdrop-filter: blur(10px); }
+    .grid-assign{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end; margin-bottom: 20px; }
+    
+    input, select{ width: 100%; background: var(--bg0); border: 1px solid var(--line); color: #fff; padding: 12px; border-radius: 12px; outline: none; }
+    input:focus{ border-color: var(--blue); }
+    
+    .btn-main{ background: linear-gradient(135deg, var(--green), var(--cyan)); color: #000; border: 0; padding: 14px; border-radius: 12px; font-weight: 900; cursor: pointer; }
+    
+    /* Tabla */
+    .table-scroll{ overflow-x: auto; margin-top: 20px; }
+    table{ width: 100%; border-collapse: collapse; min-width: 900px; }
+    th{ text-align: left; padding: 15px; color: var(--muted); font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+    td{ padding: 15px; border-bottom: 1px solid var(--line); font-size: 14px; }
+    
+    /* Botones de Acción */
+    .actions{ display: flex; gap: 8px; }
+    .a-btn{ border: 0; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; color: #000; }
+    .btn-copy{ background: var(--cyan); }
+    .btn-renew{ background: var(--green); }
+    .btn-move{ background: var(--yellow); }
+    .btn-del{ background: var(--red); color: #fff; }
+
+    .status-tag{ padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 10px; }
+    .tag-vencido{ background: rgba(255,59,95,.1); color: var(--red); }
+    .tag-activo{ background: rgba(24,201,100,.1); color: var(--green); }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="brand"><div class="logo">SS</div><div class="title"><h1>SISTEMA STREAMING</h1><p class="sub">control de ventas</p></div></div>
-      <div style="display:flex; gap:10px"><input class="input" id="adminKey" placeholder="Admin Key" style="width:180px" /><button class="btn" id="btnReload">🔄</button></div>
-    </div>
 
-    <div class="kpis">
-      <div class="kpi"><p class="n" id="cActivos">0</p><div>ACTIVOS</div></div>
-      <div class="kpi red"><p class="n" id="cVencidos">0</p><div>VENCIDOS</div></div>
-      <div class="kpi"><p class="n" id="cTotal">0</p><div>TOTAL</div></div>
-    </div>
-
-    <div class="panel">
-      <div class="assign">
-        <div><small>SERVICIO</small><select id="asSvc" class="input"></select></div>
-        <div><small>CUENTA LIBRE</small><select id="asAccount" class="input"></select></div>
-        <div><small>CLIENTE</small><input id="asName" class="input" placeholder="Nombre" /></div>
-        <button id="btnAssign" class="btn">✓ ASIGNAR</button>
-      </div>
-
-      <div style="margin: 15px 0"><input class="input" id="q" placeholder="Buscar cliente..." /></div>
-      <div id="status" style="font-size:12px; color:var(--muted)">Cargando...</div>
-
-      <div class="tablewrap">
-        <table>
-          <thead><tr><th>SERVICIO</th><th>CUENTA</th><th>CLIENTE</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
-          <tbody id="tb"></tbody>
-        </table>
-      </div>
+<div class="container">
+  <div class="header">
+    <h2>SISTEMA <span style="color:var(--blue)">STREAMING</span></h2>
+    <div style="display:flex; gap:10px">
+      <input type="password" id="adminKey" placeholder="Admin Key" style="width:150px">
+      <button onclick="load()" class="btn-main" style="padding:10px 15px">🔄</button>
     </div>
   </div>
 
-  <script>
-    let allRows = [];
-    let availableMap = {};
-    const $ = id => document.getElementById(id);
+  <div class="kpis">
+    <div class="kpi"><b id="cActivos">0</b><span>Activos</span></div>
+    <div class="kpi" style="border-color:var(--red)"><b id="cVencidos" style="color:var(--red)">0</b><span>Vencidos</span></div>
+    <div class="kpi"><b id="cTotal">0</b><span>Total Clientes</span></div>
+  </div>
 
-    async function api(path, opts = {}) {
-      const key = $("adminKey").value.trim();
-      const res = await fetch(path, {
-        ...opts,
-        headers: { "Content-Type": "application/json", "x-admin-key": key, ...(opts.headers || {}) }
-      });
-      return await res.json();
-    }
+  <div class="panel">
+    <div class="grid-assign">
+      <div><span>Servicio</span><select id="asSvc" onchange="actualizarCuentas()"></select></div>
+      <div><span>Cuenta Libre</span><select id="asAccount"></select></div>
+      <div><span>Cliente</span><input id="asName" placeholder="Nombre..."></div>
+      <div><span>Días</span><input id="asDays" type="number" value="30"></div>
+      <button id="btnAssign" onclick="asignarEnFila()" class="btn-main">✓ REGISTRAR VENTA</button>
+    </div>
 
-    async function load() {
-      $("status").textContent = "Actualizando...";
-      try {
-        const data = await api("/api/dashboard");
-        allRows = data.rows || [];
-        availableMap = {};
-        
-        let activos = 0, vencidos = 0;
-        allRows.forEach(r => {
-          if (String(r.nombre).toLowerCase() === "disponible") {
-            if (!availableMap[r.servicio]) availableMap[r.servicio] = [];
-            availableMap[r.servicio].push(r);
-          } else {
-            if (r.bucket === "vencidos") vencidos++; else activos++;
-          }
-        });
+    <div style="margin: 20px 0;">
+      <input id="q" oninput="render()" placeholder="Buscar por nombre, correo o servicio..." style="background:var(--bg2)">
+    </div>
 
-        $("cActivos").textContent = activos;
-        $("cVencidos").textContent = vencidos;
-        $("cTotal").textContent = activos + vencidos;
+    <div id="msg" style="font-size:12px; color:var(--muted); margin-bottom:10px">Iniciando sistema...</div>
 
-        updateDropdowns();
-        render();
-        $("status").textContent = "Sincronizado ✅";
-      } catch (e) { $("status").textContent = "Error de conexión"; }
-    }
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Servicio</th>
+            <th>Cuenta / Perfil</th>
+            <th>Cliente</th>
+            <th>Vencimiento</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-    function updateDropdowns() {
-      const svcs = Object.keys(availableMap).sort();
-      $("asSvc").innerHTML = `<option value="">Seleccionar...</option>` + svcs.map(s => `<option value="${s}">${s} (${availableMap[s].length})</option>`).join("");
-      $("asAccount").innerHTML = `<option value="">Elige servicio primero</option>`;
-    }
+<script>
+  let allRows = [];
+  let availableMap = {};
+  const $ = id => document.getElementById(id);
 
-    $("asSvc").onchange = () => {
-      const svc = $("asSvc").value;
-      const list = availableMap[svc] || [];
-      $("asAccount").innerHTML = list.map(r => `<option value="${r.row}">${r.correo} (P:${r.perfil})</option>`).join("");
-    };
+  async function api(path, opts = {}) {
+    const key = $("adminKey").value;
+    const res = await fetch(path, {
+      ...opts,
+      headers: { "Content-Type": "application/json", "x-admin-key": key, ...(opts.headers || {}) }
+    });
+    if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Error"); }
+    return await res.json();
+  }
 
-    function render() {
-      const q = $("q").value.toLowerCase();
-      const tb = $("tb");
-      tb.innerHTML = "";
-
-      allRows.filter(r => (r.nombre + r.correo + r.servicio).toLowerCase().includes(q)).forEach(r => {
-        const isD = String(r.nombre).toLowerCase() === "disponible";
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td style="color:var(--cyan); font-weight:bold">${r.servicio}</td>
-          <td>${r.correo}<br><small>P:${r.perfil} PIN:${r.pin}</small></td>
-          <td>${isD ? "DISPONIBLE" : r.nombre}</td>
-          <td><span class="badge-status ${r.bucket==='vencidos'?'red':'green'}">${r.dias} DÍAS</span></td>
-          <td>
-            <div class="actions">
-              <button class="a-btn a-copy" onclick="copiar(${r.row})">COPIAR</button>
-              ${!isD ? `<button class="a-btn a-renew" onclick="renovar(${r.row})">RENOVAR</button>` : ''}
-              ${!isD ? `<button class="a-btn a-move" onclick="reasignar(${r.row})">MOVER</button>` : ''}
-              <button class="a-btn a-del" onclick="borrar(${r.row})">BORRAR</button>
-            </div>
-          </td>
-        `;
-        tb.appendChild(tr);
-      });
-    }
-
-    // --- FUNCIONES DE LOS BOTONES ---
-
-    async function asignarEnFila() {
-      const row = $("asAccount").value;
-      const nombre = $("asName").value;
-      if (!row || !nombre) return alert("Faltan datos");
+  async function load() {
+    $("msg").textContent = "Cargando datos...";
+    try {
+      const data = await api("/api/dashboard");
+      allRows = data.rows || [];
+      availableMap = {};
       
-      const res = await api("/api/asignar", {
-        method: "POST",
-        body: JSON.stringify({ row: Number(row), nombre, dias: 30 })
+      let activos = 0, vencidos = 0;
+      
+      allRows.forEach(r => {
+        const isDisp = String(r.nombre).toLowerCase().trim() === "disponible";
+        if (isDisp) {
+          if (!availableMap[r.servicio]) availableMap[r.servicio] = [];
+          availableMap[r.servicio].push(r);
+        } else {
+          if (r.bucket === "vencidos") vencidos++; else activos++;
+        }
       });
-      if (res.ok) { alert("Venta Exitosa"); load(); }
-    }
 
-    window.copiar = async (rowId) => {
-      const r = allRows.find(x => x.row == rowId);
-      const txt = `Servicio: ${r.servicio}\nCorreo: ${r.correo}\nClave: ${r.contrasena}\nPerfil: ${r.perfil}\nPIN: ${r.pin}`;
-      await navigator.clipboard.writeText(txt);
-      alert("Copiado al portapapeles");
-    };
+      $("cActivos").textContent = activos;
+      $("cVencidos").textContent = vencidos;
+      $("cTotal").textContent = activos + vencidos;
 
-    window.renovar = async (row) => {
-      const res = await api("/api/renovar", { method: "POST", body: JSON.stringify({ row, dias: 30 }) });
-      if (res.ok) load();
-    };
+      // Llenar Servicios
+      const svcs = Object.keys(availableMap).sort();
+      $("asSvc").innerHTML = `<option value="">Seleccionar...</option>` + 
+        svcs.map(s => `<option value="${s}">${s} (${availableMap[s].length})</option>`).join("");
+      
+      render();
+      $("msg").textContent = "Sincronizado con Google Sheets ✅";
+    } catch (e) { $("msg").textContent = "Error: " + e.message; }
+  }
 
-    window.reasignar = async (fromRow) => {
-      const toRow = prompt("Número de fila destino (Disponible):");
-      if (!toRow) return;
-      const res = await api("/api/reassign", { method: "POST", body: JSON.stringify({ fromRow, toRow: Number(toRow) }) });
-      if (res.ok) load();
-    };
+  function actualizarCuentas() {
+    const svc = $("asSvc").value;
+    const list = availableMap[svc] || [];
+    $("asAccount").innerHTML = list.map(r => `<option value="${r.row}">${r.correo} (P:${r.perfil})</option>`).join("");
+  }
 
-    window.borrar = async (row) => {
-      if (!confirm("¿Liberar cuenta?")) return;
-      const res = await api("/api/free", { method: "POST", body: JSON.stringify({ row }) });
-      if (res.ok) load();
-    };
+  function render() {
+    const q = $("q").value.toLowerCase();
+    const tb = $("tb");
+    tb.innerHTML = "";
 
-    $("btnAssign").onclick = asignarEnFila;
-    $("btnReload").onclick = load;
-    $("q").oninput = render;
-    window.onload = load;
-  </script>
+    allRows.filter(r => (r.nombre + r.correo + r.servicio).toLowerCase().includes(q)).forEach(r => {
+      const isD = String(r.nombre).toLowerCase().trim() === "disponible";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="color:var(--cyan); font-weight:bold">${r.servicio}</td>
+        <td><b>${r.correo}</b><br><small style="color:var(--muted)">P:${r.perfil} | PIN:${r.pin}</small></td>
+        <td>${isD ? '<span style="color:var(--muted)">DISPONIBLE</span>' : `<b>${r.nombre}</b>`}</td>
+        <td><span class="status-tag ${r.bucket==='vencidos'?'tag-vencido':'tag-activo'}">${r.dias} DÍAS</span></td>
+        <td>
+          <div class="actions">
+            <button class="a-btn btn-copy" onclick="copiarRow(${r.row})">COPIAR</button>
+            ${!isD ? `<button class="a-btn btn-renew" onclick="renovarRow(${r.row})">RENOVAR</button>` : ''}
+            ${!isD ? `<button class="a-btn btn-move" onclick="reasignarRow(${r.row})">MOVER</button>` : ''}
+            <button class="a-btn btn-del" onclick="borrarRow(${r.row})">BORRAR</button>
+          </div>
+        </td>
+      `;
+      tb.appendChild(tr);
+    });
+  }
+
+  // FUNCIONES GLOBALES DE BOTONES
+  window.asignarEnFila = async () => {
+    const row = $("asAccount").value;
+    const nombre = $("asName").value;
+    const dias = $("asDays").value;
+    if (!row || !nombre) return alert("Falta elegir cuenta o poner nombre");
+    
+    try {
+      await api("/api/asignar", { method: "POST", body: JSON.stringify({ row: Number(row), nombre, dias: Number(dias) }) });
+      alert("✅ Venta registrada");
+      load();
+    } catch(e) { alert(e.message); }
+  };
+
+  window.copiarRow = async (rowId) => {
+    const r = allRows.find(x => x.row == rowId);
+    const txt = `*DETALLES DE TU CUENTA*\n\nServicio: ${r.servicio}\nCorreo: ${r.correo}\nClave: ${r.contrasena}\nPerfil: ${r.perfil}\nPIN: ${r.pin}\n\n*¡Gracias por su compra!*`;
+    await navigator.clipboard.writeText(txt);
+    alert("📋 Datos copiados");
+  };
+
+  window.renovarRow = async (row) => {
+    const d = prompt("¿Días a renovar?", "30");
+    if (!d) return;
+    try {
+      await api("/api/renovar", { method: "POST", body: JSON.stringify({ row, dias: Number(d) }) });
+      load();
+    } catch(e) { alert(e.message); }
+  };
+
+  window.borrarRow = async (row) => {
+    if (!confirm("¿Deseas borrar al cliente y liberar la cuenta?")) return;
+    try {
+      await api("/api/delete", { method: "POST", body: JSON.stringify({ row }) });
+      load();
+    } catch(e) { alert(e.message); }
+  };
+
+  window.reasignarRow = async (fromRow) => {
+    const toRow = prompt("Ingrese el número de FILA de la cuenta nueva:");
+    if (!toRow) return;
+    try {
+      await api("/api/reassign", { method: "POST", body: JSON.stringify({ fromRow, toRow: Number(toRow) }) });
+      load();
+    } catch(e) { alert(e.message); }
+  };
+
+  window.onload = load;
+</script>
+
 </body>
 </html>
