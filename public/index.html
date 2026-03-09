@@ -20,15 +20,16 @@
       --blue:#4f8cff;
       --purple:#b094ff;
       --shadow: 0 20px 70px rgba(0,0,0,.55);
+      --shadow2: 0 10px 30px rgba(0,0,0,.45);
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
-      font-family: system-ui, -apple-system, sans-serif;
-      background: var(--bg0);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--txt);
+      background: var(--bg0);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -36,96 +37,128 @@
 
     header{
       background: var(--bg1);
-      padding: 20px;
+      padding: 20px 25px;
       border-bottom: 1px solid var(--line);
       flex-shrink: 0;
+      z-index: 10;
     }
+
+    .header-top{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .header-top h1{
+      margin: 0;
+      font-size: 1.4em;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-top h1 span{ color: var(--blue); }
 
     .kpis{
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 15px;
-      margin-top: 15px;
     }
     .kpi{
       background: var(--bg2);
       padding: 15px;
-      border-radius: 12px;
-      text-align: center;
-      border-bottom: 3px solid var(--line);
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      transition: 0.3s;
+      position: relative;
+      overflow: hidden;
     }
-    .kpi.vencidos{ border-color: var(--red); }
-    .kpi.porvencer{ border-color: var(--yellow); }
-    .kpi.activos{ border-color: var(--green); }
-    .kpi.total{ border-color: var(--blue); }
-    
-    .kpi b{ display: block; font-size: 1.8em; margin-bottom: 2px; }
-    .kpi span{ font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .kpi::after{
+      content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--line);
+    }
+    .kpi.vencidos::after{ background: var(--red); }
+    .kpi.porvencer::after{ background: var(--yellow); }
+    .kpi.activos::after{ background: var(--green); }
+    .kpi.total::after{ background: var(--blue); }
+    .kpi.stock::after{ background: var(--cyan); }
+
+    .kpi b{ display: block; font-size: 1.8em; line-height: 1; margin-bottom: 5px; }
+    .kpi span{ font-size: 0.75em; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
 
     .controls{
       background: var(--bg1);
-      padding: 15px 20px;
+      padding: 15px 25px;
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
       border-bottom: 1px solid var(--line);
       flex-wrap: wrap;
     }
 
+    .search-box{ flex: 1; position: relative; min-width: 250px; }
     input, select{
+      width: 100%;
       background: var(--bg2);
       border: 1px solid var(--line);
       color: #fff;
-      padding: 10px 14px;
-      border-radius: 10px;
+      padding: 10px 15px;
+      border-radius: 12px;
       outline: none;
-      font-size: 0.9em;
+      font-size: 0.95em;
+      transition: 0.2s;
     }
-    input:focus{ border-color: var(--blue); }
+    input:focus{ border-color: var(--blue); box-shadow: 0 0 0 3px rgba(79,140,255,0.15); }
 
-    .main-scroll{ flex: 1; overflow-y: auto; padding: 20px; }
+    .main-scroll{ flex: 1; overflow-y: auto; padding: 25px; background: var(--bg0); }
 
     table{
       width: 100%;
-      border-collapse: collapse;
-      background: var(--bg1);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
+      border-collapse: separate;
+      border-spacing: 0 8px;
     }
     th{
       text-align: left;
-      padding: 16px;
-      background: rgba(255,255,255,0.03);
+      padding: 0 15px 10px;
       color: var(--muted);
       font-size: 0.75em;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-    td{ padding: 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    tr.row-item{
+      background: var(--bg1);
+      transition: 0.2s;
+    }
+    tr.row-item:hover{ background: var(--bg2); transform: translateY(-1px); }
+    td{ padding: 16px 15px; }
+    td:first-child{ border-radius: 15px 0 0 15px; }
+    td:last-child{ border-radius: 0 15px 15px 0; text-align: right; }
 
-    .svc-name{ font-weight: 800; color: var(--cyan); font-size: 0.95em; }
-    .svc-mail{ font-size: 0.8em; color: var(--muted); margin-top: 2px; }
+    .svc-name{ font-weight: 800; color: var(--txt); font-size: 1em; }
+    .svc-mail{ font-size: 0.85em; color: var(--muted); margin-top: 2px; }
 
     .badge{
-      padding: 5px 10px;
-      border-radius: 8px;
-      font-size: 0.7em;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 0.75em;
       font-weight: 800;
-      display: inline-block;
+      text-transform: uppercase;
     }
-    .badge-vencido{ background: rgba(255,59,95,0.15); color: var(--red); }
-    .badge-activo{ background: rgba(24,201,100,0.15); color: var(--green); }
-    .badge-porvencer{ background: rgba(245,179,1,0.15); color: var(--yellow); }
-    .badge-disponible{ background: rgba(255,255,255,0.1); color: #fff; }
+    .badge-vencido{ background: rgba(255,59,95,0.12); color: var(--red); }
+    .badge-activo{ background: rgba(24,201,100,0.12); color: var(--green); }
+    .badge-porvencer{ background: rgba(245,179,1,0.12); color: var(--yellow); }
+    .badge-disponible{ background: rgba(255,255,255,0.05); color: #fff; border: 1px dashed rgba(255,255,255,0.2); }
 
     .btn{
-      padding: 10px 18px;
-      border-radius: 10px;
+      padding: 10px 20px;
+      border-radius: 12px;
       border: none;
       font-weight: 700;
       cursor: pointer;
-      font-size: 0.85em;
+      font-size: 0.9em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       transition: 0.2s;
     }
     .btn-blue{ background: var(--blue); color: #fff; }
@@ -133,42 +166,46 @@
     .btn-icon{
       background: var(--bg2);
       color: #fff;
-      width: 36px; height: 36px;
+      width: 38px; height: 38px;
       display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 10px; border: 1px solid var(--line);
+      border-radius: 12px; border: 1px solid var(--line);
       cursor: pointer;
+      font-size: 1.1em;
     }
 
-    /* Modales (Tu lógica original) */
+    /* MODALES */
     .modal{
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(5px);
+      backdrop-filter: blur(8px);
       display: none; align-items: center; justify-content: center;
-      z-index: 100; padding: 20px;
+      z-index: 1000; padding: 20px;
     }
     .modal-content{
       background: var(--bg1);
-      width: 100%; max-width: 450px;
-      border-radius: 20px;
+      width: 100%; max-width: 480px;
+      border-radius: 24px;
       padding: 30px;
-      position: relative;
+      border: 1px solid var(--line);
       box-shadow: var(--shadow);
     }
+
+    #status{ font-size: 0.8em; background: var(--bg2); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--line); }
+    .txt-red{ color: var(--red); font-weight: 800; }
   </style>
 </head>
 <body>
 
   <header>
-    <div style="display:flex; justify-content:space-between; align-items:center">
-      <h2 style="margin:0; font-weight:900; letter-spacing:-1px">STREAMING <span style="color:var(--blue)">ADMIN</span></h2>
-      <div id="status" style="font-size:0.7em; color:var(--muted)">Conectando...</div>
+    <div class="header-top">
+      <h1>SISTEMA <span>STREAMING</span></h1>
+      <div id="status">Iniciando...</div>
     </div>
 
     <div class="kpis">
       <div class="kpi total">
         <b id="cTotal">0</b>
-        <span>Clientes</span>
+        <span>Clientes Totales</span>
       </div>
       <div class="kpi vencidos">
         <b id="cVencidos">0</b>
@@ -182,31 +219,34 @@
         <b id="cActivos">0</b>
         <span>Activos</span>
       </div>
-      <div class="kpi" style="border-color:var(--cyan)">
+      <div class="kpi stock">
         <b id="availTotal">0</b>
-        <span>Stock</span>
+        <span>Stock Disponible</span>
       </div>
     </div>
   </header>
 
   <div class="controls">
-    <input type="text" id="q" placeholder="Buscar cliente, correo o servicio..." style="flex:1">
-    <select id="f">
-      <option value="">Todos los estados</option>
+    <div class="search-box">
+      <input type="text" id="q" placeholder="Buscar por cliente, cuenta o servicio...">
+    </div>
+    <select id="f" style="width: auto;">
+      <option value="">Filtrar Estado</option>
       <option value="vencidos">Vencidos</option>
       <option value="porvencer">Por Vencer</option>
       <option value="activos">Activos</option>
-      <option value="disponible">Solo Stock</option>
+      <option value="disponible">Solo Stock (Disponibles)</option>
     </select>
-    <button id="btnAssign" class="btn btn-green">Asignar Nueva</button>
-    <button id="btnReload" class="btn-icon">🔄</button>
+    <button id="btnAssign" class="btn btn-green">➕ Nueva Venta</button>
+    <button id="btnReload" class="btn-icon" title="Actualizar">🔄</button>
   </div>
 
   <div class="main-scroll">
+    <div id="errorBox" style="display:none; background:var(--red); color:white; padding:15px; border-radius:12px; margin-bottom:20px;"></div>
     <table>
       <thead>
         <tr>
-          <th>Servicio / Cuenta</th>
+          <th>Servicio y Cuenta</th>
           <th>Cliente</th>
           <th>Estado</th>
           <th>Días</th>
@@ -219,15 +259,15 @@
 
   <div id="modAssign" class="modal">
     <div class="modal-content">
-      <h3>Asignar Cliente</h3>
-      <div style="display:flex; flex-direction:column; gap:15px">
-        <input type="text" id="asNom" placeholder="Nombre del cliente">
-        <input type="text" id="asTel" placeholder="WhatsApp (ej: 1809...)">
+      <h2 style="margin-top:0">Nueva Asignación</h2>
+      <div style="display:grid; gap:15px">
+        <input type="text" id="asNom" placeholder="Nombre del Cliente">
+        <input type="text" id="asTel" placeholder="WhatsApp (Ej: 18091234567)">
         <select id="asSvc"></select>
         <select id="asAcc"></select>
-        <input type="number" id="asDias" value="30" placeholder="Días">
-        <button id="btnDoAssign" class="btn btn-blue">Confirmar y Copiar Datos</button>
-        <button onclick="$('modAssign').style.display='none'" class="btn" style="background:transparent; color:var(--muted)">Cancelar</button>
+        <input type="number" id="asDias" value="30" placeholder="Días de Servicio">
+        <button id="btnDoAssign" class="btn btn-blue" style="justify-content:center">Confirmar Venta</button>
+        <button onclick="$('modAssign').style.display='none'" class="btn" style="background:transparent; color:var(--muted); justify-content:center">Cancelar</button>
       </div>
     </div>
   </div>
@@ -245,41 +285,41 @@
       });
       if(res.status === 401) throw new Error("No autorizado");
       const data = await res.json();
-      if(!data.ok) throw new Error(data.error || "Error desconocido");
+      if(!data.ok) throw new Error(data.error || "Error API");
       return data;
     }
 
-    function setStatus(txt){ $("status").textContent = txt; }
+    function setStatus(t){ $("status").textContent = t; }
 
-    async function load(silent=false){
-      if(!silent) setStatus("Cargando...");
+    async function load(quiet=false){
+      if(!quiet) setStatus("Sincronizando...");
       try{
         const data = await api("/api/dashboard");
         allRows = data.rows || [];
 
-        // ✅ CORRECCIÓN DE CONTADORES
-        const counts = { vencidos:0, porvencer:0, activos:0, total:0 };
-        for(const r of allRows){
-          if(r.bucket !== "disponible") {
-            counts.total++;
-            if(r.bucket === "vencidos") counts.vencidos++;
-            else if(r.bucket === "porvencer") counts.porvencer++;
-            else if(r.bucket === "activos") counts.activos++;
+        // ✅ LÓGICA DE CONTADORES: Solo cuenta clientes reales
+        const c = { vencidos:0, porvencer:0, activos:0, total:0 };
+        allRows.forEach(r => {
+          if(r.bucket !== "disponible"){
+            c.total++;
+            if(r.bucket === "vencidos") c.vencidos++;
+            else if(r.bucket === "porvencer") c.porvencer++;
+            else if(r.bucket === "activos") c.activos++;
           }
-        }
+        });
 
-        $("cTotal").textContent = counts.total;
-        $("cVencidos").textContent = counts.vencidos;
-        $("cPorVencer").textContent = counts.porvencer;
-        $("cActivos").textContent = counts.activos;
+        $("cTotal").textContent = c.total;
+        $("cVencidos").textContent = c.vencidos;
+        $("cPorVencer").textContent = c.porvencer;
+        $("cActivos").textContent = c.activos;
         $("availTotal").textContent = data.availableTotal || 0;
 
         render();
-        setStatus("Sincronizado ✅");
+        if(!quiet) setStatus("Sincronizado ✅");
       }catch(e){
         if(e.message === "No autorizado"){
           const k = prompt("Introduce tu Admin Key:");
-          if(k) { localStorage.setItem("admin_key", k); load(); }
+          if(k){ localStorage.setItem("admin_key", k); load(); }
         } else {
           setStatus("Error ❌");
           alert(e.message);
@@ -301,38 +341,48 @@
 
       filtered.forEach(r => {
         const tr = document.createElement("tr");
-        const isVencido = r.bucket === "vencidos";
-        const isDisp = r.bucket === "disponible";
+        tr.className = "row-item";
+        const isV = r.bucket === "vencidos";
+        const isD = r.bucket === "disponible";
 
         tr.innerHTML = `
           <td>
             <div class="svc-name">${r.servicio}</div>
             <div class="svc-mail">${r.correo}</div>
           </td>
-          <td>${isDisp ? '<i style="color:var(--muted)">Vacante</i>' : r.nombre}</td>
-          <td><span class="badge badge-${r.bucket}">${r.bucket.toUpperCase()}</span></td>
-          <td style="font-weight:bold; color:${isVencido?'var(--red)':'inherit'}">${r.dias}</td>
+          <td>${isD ? '<span style="color:var(--muted)">-</span>' : r.nombre}</td>
+          <td><span class="badge badge-${r.bucket}">${r.bucket.replace('porvencer','Pox Vencer').toUpperCase()}</span></td>
+          <td class="${isV ? 'txt-red' : ''}">${isD ? '-' : r.dias}</td>
           <td>
-            <div style="display:flex; gap:5px">
-              <button class="btn-icon" onclick="copyRow(${r.row})">📋</button>
-              ${isVencido ? `<button class="btn btn-blue" style="padding:5px 10px" onclick="renewRow(${r.row})">Renovar</button>` : ''}
-              ${isDisp ? `<button class="btn btn-green" style="padding:5px 10px" onclick="assignRow(${r.row})">Asignar</button>` : ''}
-              <button class="btn-icon" onclick="deleteRow(${r.row})">🗑️</button>
-            </div>
+            <button class="btn-icon" onclick="copyClient(${r.row})">📋</button>
+            <button class="btn-icon" onclick="editRow(${r.row})">✏️</button>
+            ${isV ? `<button class="btn-icon" style="color:var(--green)" onclick="renewRow(${r.row})">🔄</button>` : ''}
+            <button class="btn-icon" style="color:var(--red)" onclick="deleteRow(${r.row})">🗑️</button>
           </td>
         `;
         body.appendChild(tr);
       });
     }
 
-    // Eventos
+    // Funciones de acción (deben estar conectadas a tus rutas en server.js)
+    async function renewRow(row){
+      const d = prompt("¿Cuántos días renovar?", "30");
+      if(!d) return;
+      await api("/api/renovar", { method:"POST", body: JSON.stringify({ row, dias:Number(d) }) });
+      load(true);
+    }
+
+    async function deleteRow(row){
+      if(!confirm("¿Eliminar este cliente y liberar la cuenta?")) return;
+      await api("/api/delete", { method:"POST", body: JSON.stringify({ row }) });
+      load(true);
+    }
+
     $("q").oninput = render;
     $("f").onchange = render;
     $("btnReload").onclick = () => load();
+    $("btnAssign").onclick = () => $("modAssign").style.display='flex';
     window.onload = () => load();
-
-    // Nota: Las funciones copyRow, renewRow, deleteRow y assignRow 
-    // deben estar conectadas a tus rutas de API en server.js
   </script>
 </body>
 </html>
