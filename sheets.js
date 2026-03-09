@@ -15,7 +15,7 @@ function norm(s) {
 function requireEnv() {
   if (!SHEET_ID) throw new Error("Falta SHEET_ID en las variables de entorno");
   if (!process.env.GOOGLE_CREDENTIALS_JSON && !fs.existsSync(CREDENTIALS_PATH)) {
-    throw new Error(`No se encontró GOOGLE_CREDENTIALS_JSON ni el archivo ${CREDENTIALS_PATH}`);
+    throw new Error("No se encontró GOOGLE_CREDENTIALS_JSON ni el archivo credentials.json");
   }
 }
 
@@ -46,17 +46,17 @@ async function getRawRows() {
 }
 
 function parseRows(rows) {
-  if (rows.length < 1) return { map: {}, rows: [], stats: { vencidos: 0, activos: 0, disponibles: 0 } };
+  if (rows.length < 1) return { map: {}, rows: [], stats: { vencidos: 0, activos: 0, disponibles: 0, total: 0 } };
   const headers = rows[0].map(h => norm(h));
   const map = {};
   headers.forEach((h, i) => { if (h) map[h] = i; });
 
   let parsed = [];
-  let stats = { vencidos: 0, activos: 0, disponibles: 0 };
+  let stats = { vencidos: 0, activos: 0, disponibles: 0, total: 0 };
 
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
-    if (!r[map["servicio"]] && !r[map["correo"]]) continue; // Ignora filas totalmente vacías
+    if (!r[map["servicio"]] && !r[map["correo"]]) continue; 
 
     const rowNum = i + 1;
     const nombreRaw = (r[map["nombre"]] || "").trim();
@@ -71,12 +71,15 @@ function parseRows(rows) {
     if (esDisponible) {
       estadoFinal = "DISPONIBLE";
       stats.disponibles++;
-    } else if (diasVal <= 0) {
-      estadoFinal = "VENCIDO";
-      stats.vencidos++;
     } else {
-      estadoFinal = "ACTIVO";
-      stats.activos++;
+      stats.total++; // Es un cliente real
+      if (diasVal <= 0) {
+        estadoFinal = "VENCIDO";
+        stats.vencidos++;
+      } else {
+        estadoFinal = "ACTIVO";
+        stats.activos++;
+      }
     }
 
     parsed.push({
@@ -95,12 +98,10 @@ function parseRows(rows) {
     });
   }
 
-  // ORDEN: 1. Vencidos, 2. Activos (menos días primero), 3. Disponibles
+  // ORDEN: 1. Vencidos, 2. Activos (por días), 3. Disponibles
   parsed.sort((a, b) => {
     const prioridad = { "VENCIDO": 1, "ACTIVO": 2, "DISPONIBLE": 3 };
-    if (prioridad[a.estado] !== prioridad[b.estado]) {
-      return prioridad[a.estado] - prioridad[b.estado];
-    }
+    if (prioridad[a.estado] !== prioridad[b.estado]) return prioridad[a.estado] - prioridad[b.estado];
     return a.dias - b.dias;
   });
 
@@ -182,8 +183,6 @@ async function eliminarCliente(rowNumber) {
 async function reasignarCuenta({ fromRow, toRow }) {
   const { map, rows } = await getDashboard();
   const src = rows.find(r => Number(r.row) === Number(fromRow));
-  
-  // Obtenemos datos frescos de la cuenta destino (la disponible)
   const rawRows = await getRawRows();
   const headers = rawRows[0].map(h => norm(h));
   const localMap = {};
