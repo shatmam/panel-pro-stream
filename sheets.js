@@ -71,16 +71,23 @@ function parseRows(rows) {
     const r = rows[i];
     const rowNum = i + 1;
     
-    // Extraemos los días y forzamos que sea un número
-    const diasVal = parseInt(r[map["dias restantes"]]) || 0;
-    let estadoOriginal = (r[map["estado"]] || "").toUpperCase();
-    let nombreC = (r[map["nombre"]] || "");
+    // LIMPIEZA EXTREMA: Quitamos cualquier cosa que no sea número o signo menos
+    const rawDias = String(r[map["dias restantes"]] || "0").replace(/[^0-9\-]/g, "");
+    const diasVal = parseInt(rawDias);
+    
+    let nombreC = (r[map["nombre"]] || "").trim();
+    let estadoOriginal = (r[map["estado"]] || "").toUpperCase().trim();
 
-    // CORRECCIÓN: Si tiene nombre y los días son 0 o menos, forzamos VENCIDO
+    // LÓGICA DE ESTADO:
     let estadoFinal = estadoOriginal;
+
+    // Si la celda está vacía o el nombre es "Disponible", no hacemos nada
     if (nombreC && norm(nombreC) !== "disponible") {
-        if (diasVal <= 0) {
+        // SI LOS DÍAS SON 0 O MENOS, ES VENCIDO POR NARICES
+        if (!isNaN(diasVal) && diasVal <= 0) {
             estadoFinal = "VENCIDO";
+        } else if (estadoOriginal !== "VENCIDO") {
+            estadoFinal = "ACTIVO";
         }
     }
 
@@ -93,10 +100,10 @@ function parseRows(rows) {
       pin: r[map["pin"]] || "",
       nombre: nombreC,
       telefono: r[map["telefono"]] || "",
-      estado: estadoFinal, // Usamos el estado corregido
+      estado: estadoFinal,
       inicio: r[map["fecha de inicio"]] || "",
       vencimiento: r[map["fecha de vencimiento"]] || "",
-      dias: diasVal
+      dias: isNaN(diasVal) ? 0 : diasVal
     });
   }
   return { map, rows: data };
