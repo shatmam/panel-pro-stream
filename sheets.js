@@ -70,6 +70,20 @@ function parseRows(rows) {
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     const rowNum = i + 1;
+    
+    // Extraemos los días y forzamos que sea un número
+    const diasVal = parseInt(r[map["dias restantes"]]) || 0;
+    let estadoOriginal = (r[map["estado"]] || "").toUpperCase();
+    let nombreC = (r[map["nombre"]] || "");
+
+    // CORRECCIÓN: Si tiene nombre y los días son 0 o menos, forzamos VENCIDO
+    let estadoFinal = estadoOriginal;
+    if (nombreC && norm(nombreC) !== "disponible") {
+        if (diasVal <= 0) {
+            estadoFinal = "VENCIDO";
+        }
+    }
+
     data.push({
       row: rowNum,
       servicio: r[map["servicio"]] || "",
@@ -77,12 +91,12 @@ function parseRows(rows) {
       contrasena: r[map["contrasena"]] || r[map["password"]] || "",
       perfil: r[map["perfil"]] || "",
       pin: r[map["pin"]] || "",
-      nombre: r[map["nombre"]] || "",
+      nombre: nombreC,
       telefono: r[map["telefono"]] || "",
-      estado: r[map["estado"]] || "",
+      estado: estadoFinal, // Usamos el estado corregido
       inicio: r[map["fecha de inicio"]] || "",
       vencimiento: r[map["fecha de vencimiento"]] || "",
-      dias: r[map["dias restantes"]] || ""
+      dias: diasVal
     });
   }
   return { map, rows: data };
@@ -192,7 +206,6 @@ async function reasignarCuenta({ fromRow, toRow }) {
   if (!src || norm(src.nombre) === "disponible") throw new Error("Origen no válido.");
   if (!dest || norm(dest.nombre) !== "disponible") throw new Error("Destino no disponible.");
 
-  // EXTRAEMOS LOS DÍAS QUE LE QUEDABAN AL CLIENTE ORIGINAL
   const diasRestantes = parseInt(src.dias) || 30;
   const formulas = getFormulas(diasRestantes);
 
@@ -201,9 +214,9 @@ async function reasignarCuenta({ fromRow, toRow }) {
     "Telefono": src.telefono || "",
     "Teléfono": src.telefono || "",
     "Estado": "ACTIVO",
-    "Fecha de inicio": formulas.inicio, // Nueva fecha de inicio (Hoy)
-    "Fecha de vencimiento": formulas.vencimiento, // Vencimiento basado en sus días restantes
-    "Días restantes": formulas.dias // Nueva fórmula de cuenta atrás
+    "Fecha de inicio": formulas.inicio,
+    "Fecha de vencimiento": formulas.vencimiento,
+    "Días restantes": formulas.dias
   });
 
   const updatesSrc = buildUpdatesForRow(map, src.row, {
