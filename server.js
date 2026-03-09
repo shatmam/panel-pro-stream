@@ -13,191 +13,194 @@ const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
 let sheets;
 
-async function iniciarGoogle() {
+async function initGoogle(){
 
-  try {
+try{
 
-    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
 
-    const auth = new google.auth.GoogleAuth({
-      credentials: credentials,
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"]
-    });
+const auth = new google.auth.GoogleAuth({
+credentials: credentials,
+scopes:["https://www.googleapis.com/auth/spreadsheets"]
+});
 
-    sheets = google.sheets({ version: "v4", auth });
+sheets = google.sheets({
+version:"v4",
+auth
+});
 
-    console.log("Google Sheets conectado");
+console.log("Google conectado");
 
-  } catch (err) {
+}catch(err){
 
-    console.log("Error credenciales:", err.message);
-
-  }
+console.log("Error credenciales:",err.message);
 
 }
 
-function norm(v) {
-  return (v || "").toString().trim().toLowerCase();
 }
 
-async function getRows() {
-
-  try {
-
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: "Clientes!A2:M"
-    });
-
-    return res.data.values || [];
-
-  } catch (err) {
-
-    console.log("Error leyendo sheet:", err.message);
-    return [];
-
-  }
-
+function norm(v){
+return (v || "").toString().trim().toLowerCase();
 }
 
-async function updateRow(row, values) {
+async function getRows(){
 
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `Clientes!A${row}:M${row}`,
-    valueInputOption: "USER_ENTERED",
-    requestBody: { values: [values] }
-  });
+try{
+
+const res = await sheets.spreadsheets.values.get({
+spreadsheetId:SPREADSHEET_ID,
+range:"Clientes!A2:M"
+});
+
+return res.data.values || [];
+
+}catch(err){
+
+console.log("Error leyendo sheet:",err.message);
+return [];
 
 }
 
-app.get("/", (req, res) => {
+}
 
-  res.send("Servidor funcionando");
+async function updateRow(row,data){
+
+await sheets.spreadsheets.values.update({
+spreadsheetId:SPREADSHEET_ID,
+range:`Clientes!A${row}:M${row}`,
+valueInputOption:"USER_ENTERED",
+requestBody:{
+values:[data]
+}
+});
+
+}
+
+app.get("/",(req,res)=>{
+res.send("Servidor OK");
+});
+
+app.get("/cuentas",async(req,res)=>{
+
+const rows = await getRows();
+
+res.json(rows);
 
 });
 
-app.get("/cuentas", async (req, res) => {
+app.post("/asignar",async(req,res)=>{
 
-  const rows = await getRows();
+const {nombre,telefono,servicio} = req.body;
 
-  res.json(rows);
+const rows = await getRows();
 
-});
+for(let i=0;i<rows.length;i++){
 
-app.post("/asignar", async (req, res) => {
+const row = rows[i];
 
-  const { nombre, telefono, servicio } = req.body;
+const cliente = norm(row[1]);
+const servicioRow = norm(row[3]);
 
-  const rows = await getRows();
+if((cliente==="disponible" || cliente==="") && servicioRow===norm(servicio)){
 
-  for (let i = 0; i < rows.length; i++) {
+const rowNumber = i+2;
 
-    const row = rows[i];
+const hoy = new Date();
+const venc = new Date();
 
-    const cliente = norm(row[1]);
-    const servicioRow = norm(row[3]);
+venc.setDate(hoy.getDate()+30);
 
-    if ((cliente === "disponible" || cliente === "") && servicioRow === norm(servicio)) {
+const inicio = hoy.toISOString().split("T")[0];
+const vencimiento = venc.toISOString().split("T")[0];
 
-      const rowNumber = i + 2;
+const newRow = [...row];
 
-      const hoy = new Date();
-      const venc = new Date();
+newRow[1]=nombre;
+newRow[2]=telefono;
+newRow[8]=inicio;
+newRow[9]=vencimiento;
+newRow[11]="ACTIVO";
 
-      venc.setDate(hoy.getDate() + 30);
+await updateRow(rowNumber,newRow);
 
-      const inicio = hoy.toISOString().split("T")[0];
-      const vencimiento = venc.toISOString().split("T")[0];
+return res.json({ok:true,cuenta:newRow});
 
-      const newRow = [...row];
+}
 
-      newRow[1] = nombre;
-      newRow[2] = telefono;
-      newRow[8] = inicio;
-      newRow[9] = vencimiento;
-      newRow[11] = "ACTIVO";
+}
 
-      await updateRow(rowNumber, newRow);
-
-      return res.json({ ok: true, cuenta: newRow });
-
-    }
-
-  }
-
-  res.json({ ok: false });
+res.json({ok:false});
 
 });
 
-app.post("/liberar", async (req, res) => {
+app.post("/liberar",async(req,res)=>{
 
-  const { codigo } = req.body;
+const {codigo} = req.body;
 
-  const rows = await getRows();
+const rows = await getRows();
 
-  for (let i = 0; i < rows.length; i++) {
+for(let i=0;i<rows.length;i++){
 
-    if (rows[i][0] === codigo) {
+if(rows[i][0]===codigo){
 
-      const rowNumber = i + 2;
+const rowNumber = i+2;
 
-      const row = rows[i];
+const row = rows[i];
 
-      row[1] = "Disponible";
-      row[2] = "";
-      row[8] = "";
-      row[9] = "";
-      row[11] = "";
+row[1]="Disponible";
+row[2]="";
+row[8]="";
+row[9]="";
+row[11]="";
 
-      await updateRow(rowNumber, row);
+await updateRow(rowNumber,row);
 
-      return res.json({ ok: true });
+return res.json({ok:true});
 
-    }
+}
 
-  }
+}
 
-  res.json({ ok: false });
-
-});
-
-app.post("/renovar", async (req, res) => {
-
-  const { codigo, dias } = req.body;
-
-  const rows = await getRows();
-
-  for (let i = 0; i < rows.length; i++) {
-
-    if (rows[i][0] === codigo) {
-
-      const rowNumber = i + 2;
-
-      const row = rows[i];
-
-      const venc = new Date(row[9]);
-
-      venc.setDate(venc.getDate() + Number(dias));
-
-      row[9] = venc.toISOString().split("T")[0];
-
-      await updateRow(rowNumber, row);
-
-      return res.json({ ok: true });
-
-    }
-
-  }
-
-  res.json({ ok: false });
+res.json({ok:false});
 
 });
 
-iniciarGoogle().then(() => {
+app.post("/renovar",async(req,res)=>{
 
-  app.listen(PORT, () => {
-    console.log("Servidor corriendo en puerto", PORT);
-  });
+const {codigo,dias} = req.body;
+
+const rows = await getRows();
+
+for(let i=0;i<rows.length;i++){
+
+if(rows[i][0]===codigo){
+
+const rowNumber=i+2;
+
+const row=rows[i];
+
+const venc=new Date(row[9]);
+
+venc.setDate(venc.getDate()+Number(dias));
+
+row[9]=venc.toISOString().split("T")[0];
+
+await updateRow(rowNumber,row);
+
+return res.json({ok:true});
+
+}
+
+}
+
+res.json({ok:false});
+
+});
+
+initGoogle().then(()=>{
+
+app.listen(PORT,()=>{
+console.log("Servidor corriendo en puerto "+PORT);
+});
 
 });
