@@ -1,100 +1,164 @@
-require("dotenv").config();
-const express = require("express");
-const path = require("path");
-const {
-  getDashboard,
-  renovarFila,
-  updateFila,
-  asignarEnFila,
-  eliminarCliente,
-  reasignarCuenta
-} = require("./sheets");
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+import { google } from "googleapis";
 
 const app = express();
-app.use(express.json({ limit: "1mb" }));
-app.use(express.static(path.join(__dirname, "public")));
 
-function auth(req, res, next) {
-  const required = process.env.ADMIN_KEY;
-  if (!required) return next();
-  const key = req.headers["x-admin-key"];
-  if (key !== required) return res.status(401).json({ ok: false, error: "No autorizado" });
-  next();
+app.use(cors());
+app.use(bodyParser.json());
+
+const PORT = process.env.PORT || 3000;
+
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+
+const auth = new google.auth.GoogleAuth({
+  credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
+  scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+});
+
+const sheets = google.sheets({ version: "v4", auth });
+
+function norm(v) {
+  return (v || "").toString().trim().toLowerCase();
 }
 
-app.get("/api/dashboard", auth, async (req, res) => {
-  try {
-    const data = await getDashboard();
-    res.json({ ok: true, ...data });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
-  }
-});
+async function getRows() {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: "Clientes!A2:M"
+  });
 
-app.post("/api/renovar", auth, async (req, res) => {
-  try {
-    const { row, dias } = req.body || {};
-    if (!row || !dias) return res.status(400).json({ ok: false, error: "Faltan {row, dias}" });
-    const out = await renovarFila(Number(row), Number(dias));
-    res.json({ ok: true, ...out });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
-  }
-});
+  return res.data.values || [];
+}
 
-app.post("/api/update", auth, async (req, res) => {
-  try {
-    const { row, fields } = req.body || {};
-    if (!row || !fields || typeof fields !== "object") {
-      return res.status(400).json({ ok: false, error: "Faltan {row, fields}" });
+async function updateRow(row, values) {
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `Clientes!A${row}:M${row}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [values]
     }
-    const out = await updateFila(Number(row), fields);
-    res.json({ ok: true, ...out });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
-  }
+  });
+}
+
+app.get("/cuentas", async (req, res) => {
+  const rows = await getRows();
+  res.json(rows);
 });
 
-app.post("/api/asignar", auth, async (req, res) => {
+app.post("/asignar", async (req, res) => {
   try {
-    const { row, nombre, telefono, dias } = req.body || {};
-    if (!row || !nombre || !telefono) {
-      return res.status(400).json({ ok: false, error: "Faltan {row, nombre, telefono}" });
+    const { nombre, telefono, servicio } = req.body;
+
+    const rows = await getRows();
+
+    for (let i = 0; i < rows.length; i++) {
+
+      const row = rows[i];
+
+      const estadoNombre = norm(row[1]);
+      const servicioRow = norm(row[3]);
+
+      if (
+        (estadoNombre === "disponible" || estadoNombre === "") &&
+        servicioRow === norm(servicio)
+      ) {
+
+        const rowNumber = i + 2;
+
+        const hoy = new Date();
+        const venc = new Date();
+        venc.setDate(hoy.getDate() + 30);
+
+        const inicio = hoy.toISOString().split("T")[0];
+        const vencimiento = venc.toISOString().split("T")[0];
+
+        const newRow = [...row];
+
+        newRow[1] = nombre;
+        newRow[2] = telefono;
+        newRow[8] = inicio;
+        newRow[9] = vencimiento;
+        newRow[11] = "ACTIVO";
+
+        await updateRow(rowNumber, newRow);
+
+        return res.json({
+          ok: true,
+          cuenta: newRow
+        });
+      }
     }
-    const out = await asignarEnFila({ rowNumber: Number(row), nombre, telefono, dias: dias ?? 30 });
-    res.json({ ok: true, ...out });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
+
+    res.json({ ok: false, msg: "No hay cuentas disponibles" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.post("/api/delete", auth, async (req, res) => {
-  try {
-    const { row } = req.body || {};
-    if (!row) return res.status(400).json({ ok: false, error: "Falta {row}" });
-    const out = await eliminarCliente(Number(row));
-    res.json({ ok: true, ...out });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
+app.post("/liberar", async (req, res) => {
+
+  const { codigo } = req.body;
+
+  const rows = await getRows();
+
+  for (let i = 0; i < rows.length; i++) {
+
+    const row = rows[i];
+
+    if (row[0] === codigo) {
+
+      const rowNumber = i + 2;
+
+      const newRow = [...row];
+
+      newRow[1] = "Disponible";
+      newRow[2] = "";
+      newRow[8] = "";
+      newRow[9] = "";
+      newRow[11] = "";
+
+      await updateRow(rowNumber, newRow);
+
+      return res.json({ ok: true });
+    }
   }
+
+  res.json({ ok: false });
 });
 
-app.post("/api/reassign", auth, async (req, res) => {
-  try {
-    const { fromRow, toRow } = req.body || {};
-    if (!fromRow || !toRow) return res.status(400).json({ ok: false, error: "Faltan {fromRow, toRow}" });
-    const out = await reasignarCuenta({ fromRow: Number(fromRow), toRow: Number(toRow) });
-    res.json({ ok: true, ...out });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
+app.post("/renovar", async (req, res) => {
+
+  const { codigo, dias } = req.body;
+
+  const rows = await getRows();
+
+  for (let i = 0; i < rows.length; i++) {
+
+    const row = rows[i];
+
+    if (row[0] === codigo) {
+
+      const rowNumber = i + 2;
+
+      const venc = new Date(row[9]);
+      venc.setDate(venc.getDate() + Number(dias));
+
+      const newRow = [...row];
+      newRow[9] = venc.toISOString().split("T")[0];
+
+      await updateRow(rowNumber, newRow);
+
+      return res.json({ ok: true });
+    }
   }
+
+  res.json({ ok: false });
 });
 
-// --- SOLUCIÓN FINAL PARA EL ERROR DE RUTA ---
-// Esta RegExp captura cualquier ruta que no sea de la API y sirve el frontend.
-app.get(/^(?!\/api).+/, (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+app.listen(PORT, () => {
+  console.log("Servidor corriendo en puerto " + PORT);
 });
-
-const port = Number(process.env.PORT || 3000);
-app.listen(port, () => console.log(`✅ Panel corriendo en http://localhost:${port}`));
