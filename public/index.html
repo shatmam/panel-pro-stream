@@ -1,63 +1,338 @@
-// BUSCA ESTA FUNCIÓN DENTRO DE TU INDEX.HTML Y REEMPLÁZALA:
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Super Streaming Admin</title>
 
-async function load(quiet = false) {
-  if(!quiet) setStatus("Cargando datos...");
-  hideErr();
-  try {
-    const data = await api("/api/dashboard");
-    allRows = data.rows;
+  <style>
+    :root{
+      --bg0:#070A16;
+      --bg1:#0B1026;
+      --bg2:#0E173A;
+      --line: rgba(255,255,255,.10);
+      --txt:#F6F8FF;
+      --muted:#B5C0FF;
+      --red:#ff3b5f;
+      --green:#18c964;
+      --yellow:#f5b301;
+      --cyan:#23d5f2;
+      --blue:#4f8cff;
+      --purple:#b094ff;
+      --shadow: 0 20px 70px rgba(0,0,0,.55);
+    }
 
-    // ACTUALIZAR TUS CONTADORES (Usando los IDs de tu diseño original)
-    if($("statTotal")) $("statTotal").textContent = data.stats.total;
-    if($("statActive")) $("statActive").textContent = data.stats.active;
-    if($("statExpired")) $("statExpired").textContent = data.stats.expired;
-    if($("statAvailable")) $("statAvailable").textContent = data.stats.available;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg0);
+      color: var(--txt);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
-    render();
-    if(!quiet) setStatus("Listo");
-  } catch(e) {
-    showErr(e.message);
-    setStatus("Error al cargar");
-    // Si falla el login, pedimos la clave de nuevo
-    const pass = prompt("Admin Key:");
-    if(pass){ localStorage.setItem("admin_key", pass); load(); }
-  }
-}
+    header{
+      background: var(--bg1);
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
 
-// BUSCA ESTA PARTE EN TU RENDER PARA QUE NO TE BORRE LOS BOTONES:
-function render() {
-  const q = $("q").value.toLowerCase();
-  const f = $("f").value;
-  const body = $("tableBody");
-  body.innerHTML = "";
+    .kpis{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .kpi{
+      background: var(--bg2);
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      border-bottom: 3px solid var(--line);
+    }
+    .kpi.vencidos{ border-color: var(--red); }
+    .kpi.porvencer{ border-color: var(--yellow); }
+    .kpi.activos{ border-color: var(--green); }
+    .kpi.total{ border-color: var(--blue); }
+    
+    .kpi b{ display: block; font-size: 1.8em; margin-bottom: 2px; }
+    .kpi span{ font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
-  const filtered = allRows.filter(r => {
-    const matchQ = !q || (r.nombre + r.correo + r.servicio).toLowerCase().includes(q);
-    const matchF = !f || r.estado === f;
-    return matchQ && matchF;
-  });
+    .controls{
+      background: var(--bg1);
+      padding: 15px 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
 
-  filtered.forEach(r => {
-    const tr = document.createElement("tr");
-    // Aquí mantenemos tu lógica de badges y botones originales...
-    const isVencido = r.estado === "VENCIDO";
-    const isDisponible = r.estado === "DISPONIBLE";
+    input, select{
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      outline: none;
+      font-size: 0.9em;
+    }
+    input:focus{ border-color: var(--blue); }
 
-    tr.innerHTML = `
-      <td>
-        <div class="svc-name">${r.servicio}</div>
-        <div class="svc-mail">${r.correo}</div>
-      </td>
-      <td>${r.nombre}</td>
-      <td><span class="badge badge-${r.estado.toLowerCase()}">${r.estado}</span></td>
-      <td class="${isVencido ? 'txt-red' : ''}">${r.dias}</td>
-      <td>
-        <button class="btn-icon" data-act="copy" data-row="${r.row}">📋</button>
-        <button class="btn-icon" data-act="edit" data-row="${r.row}">✏️</button>
-        ${isVencido ? `<button class="btn-renovar" data-act="renew" data-row="${r.row}">Renovar</button>` : ''}
-        ${isDisponible ? `<button class="btn-asignar" data-act="assign" data-row="${r.row}">Asignar</button>` : ''}
-      </td>
-    `;
-    body.appendChild(tr);
-  });
-}
+    .main-scroll{ flex: 1; overflow-y: auto; padding: 20px; }
+
+    table{
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg1);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    th{
+      text-align: left;
+      padding: 16px;
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    td{ padding: 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+
+    .svc-name{ font-weight: 800; color: var(--cyan); font-size: 0.95em; }
+    .svc-mail{ font-size: 0.8em; color: var(--muted); margin-top: 2px; }
+
+    .badge{
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 0.7em;
+      font-weight: 800;
+      display: inline-block;
+    }
+    .badge-vencido{ background: rgba(255,59,95,0.15); color: var(--red); }
+    .badge-activo{ background: rgba(24,201,100,0.15); color: var(--green); }
+    .badge-porvencer{ background: rgba(245,179,1,0.15); color: var(--yellow); }
+    .badge-disponible{ background: rgba(255,255,255,0.1); color: #fff; }
+
+    .btn{
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: 0.2s;
+    }
+    .btn-blue{ background: var(--blue); color: #fff; }
+    .btn-green{ background: var(--green); color: #fff; }
+    .btn-icon{
+      background: var(--bg2);
+      color: #fff;
+      width: 36px; height: 36px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 10px; border: 1px solid var(--line);
+      cursor: pointer;
+    }
+
+    /* Modales (Tu lógica original) */
+    .modal{
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(5px);
+      display: none; align-items: center; justify-content: center;
+      z-index: 100; padding: 20px;
+    }
+    .modal-content{
+      background: var(--bg1);
+      width: 100%; max-width: 450px;
+      border-radius: 20px;
+      padding: 30px;
+      position: relative;
+      box-shadow: var(--shadow);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div style="display:flex; justify-content:space-between; align-items:center">
+      <h2 style="margin:0; font-weight:900; letter-spacing:-1px">STREAMING <span style="color:var(--blue)">ADMIN</span></h2>
+      <div id="status" style="font-size:0.7em; color:var(--muted)">Conectando...</div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi total">
+        <b id="cTotal">0</b>
+        <span>Clientes</span>
+      </div>
+      <div class="kpi vencidos">
+        <b id="cVencidos">0</b>
+        <span>Vencidos</span>
+      </div>
+      <div class="kpi porvencer">
+        <b id="cPorVencer">0</b>
+        <span>Por Vencer</span>
+      </div>
+      <div class="kpi activos">
+        <b id="cActivos">0</b>
+        <span>Activos</span>
+      </div>
+      <div class="kpi" style="border-color:var(--cyan)">
+        <b id="availTotal">0</b>
+        <span>Stock</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <input type="text" id="q" placeholder="Buscar cliente, correo o servicio..." style="flex:1">
+    <select id="f">
+      <option value="">Todos los estados</option>
+      <option value="vencidos">Vencidos</option>
+      <option value="porvencer">Por Vencer</option>
+      <option value="activos">Activos</option>
+      <option value="disponible">Solo Stock</option>
+    </select>
+    <button id="btnAssign" class="btn btn-green">Asignar Nueva</button>
+    <button id="btnReload" class="btn-icon">🔄</button>
+  </div>
+
+  <div class="main-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Servicio / Cuenta</th>
+          <th>Cliente</th>
+          <th>Estado</th>
+          <th>Días</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="modAssign" class="modal">
+    <div class="modal-content">
+      <h3>Asignar Cliente</h3>
+      <div style="display:flex; flex-direction:column; gap:15px">
+        <input type="text" id="asNom" placeholder="Nombre del cliente">
+        <input type="text" id="asTel" placeholder="WhatsApp (ej: 1809...)">
+        <select id="asSvc"></select>
+        <select id="asAcc"></select>
+        <input type="number" id="asDias" value="30" placeholder="Días">
+        <button id="btnDoAssign" class="btn btn-blue">Confirmar y Copiar Datos</button>
+        <button onclick="$('modAssign').style.display='none'" class="btn" style="background:transparent; color:var(--muted)">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let allRows = [];
+    let lastLoadAt = 0;
+
+    async function api(path, opts={}){
+      const key = localStorage.getItem("admin_key");
+      const res = await fetch(path, {
+        ...opts,
+        headers: { ...opts.headers, "Content-Type":"application/json", "x-admin-key": key }
+      });
+      if(res.status === 401) throw new Error("No autorizado");
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error || "Error desconocido");
+      return data;
+    }
+
+    function setStatus(txt){ $("status").textContent = txt; }
+
+    async function load(silent=false){
+      if(!silent) setStatus("Cargando...");
+      try{
+        const data = await api("/api/dashboard");
+        allRows = data.rows || [];
+
+        // ✅ CORRECCIÓN DE CONTADORES
+        const counts = { vencidos:0, porvencer:0, activos:0, total:0 };
+        for(const r of allRows){
+          if(r.bucket !== "disponible") {
+            counts.total++;
+            if(r.bucket === "vencidos") counts.vencidos++;
+            else if(r.bucket === "porvencer") counts.porvencer++;
+            else if(r.bucket === "activos") counts.activos++;
+          }
+        }
+
+        $("cTotal").textContent = counts.total;
+        $("cVencidos").textContent = counts.vencidos;
+        $("cPorVencer").textContent = counts.porvencer;
+        $("cActivos").textContent = counts.activos;
+        $("availTotal").textContent = data.availableTotal || 0;
+
+        render();
+        setStatus("Sincronizado ✅");
+      }catch(e){
+        if(e.message === "No autorizado"){
+          const k = prompt("Introduce tu Admin Key:");
+          if(k) { localStorage.setItem("admin_key", k); load(); }
+        } else {
+          setStatus("Error ❌");
+          alert(e.message);
+        }
+      }
+    }
+
+    function render(){
+      const q = $("q").value.toLowerCase();
+      const f = $("f").value;
+      const body = $("tableBody");
+      body.innerHTML = "";
+
+      const filtered = allRows.filter(r => {
+        const matchQ = !q || (r.nombre + r.correo + r.servicio).toLowerCase().includes(q);
+        const matchF = !f || r.bucket === f;
+        return matchQ && matchF;
+      });
+
+      filtered.forEach(r => {
+        const tr = document.createElement("tr");
+        const isVencido = r.bucket === "vencidos";
+        const isDisp = r.bucket === "disponible";
+
+        tr.innerHTML = `
+          <td>
+            <div class="svc-name">${r.servicio}</div>
+            <div class="svc-mail">${r.correo}</div>
+          </td>
+          <td>${isDisp ? '<i style="color:var(--muted)">Vacante</i>' : r.nombre}</td>
+          <td><span class="badge badge-${r.bucket}">${r.bucket.toUpperCase()}</span></td>
+          <td style="font-weight:bold; color:${isVencido?'var(--red)':'inherit'}">${r.dias}</td>
+          <td>
+            <div style="display:flex; gap:5px">
+              <button class="btn-icon" onclick="copyRow(${r.row})">📋</button>
+              ${isVencido ? `<button class="btn btn-blue" style="padding:5px 10px" onclick="renewRow(${r.row})">Renovar</button>` : ''}
+              ${isDisp ? `<button class="btn btn-green" style="padding:5px 10px" onclick="assignRow(${r.row})">Asignar</button>` : ''}
+              <button class="btn-icon" onclick="deleteRow(${r.row})">🗑️</button>
+            </div>
+          </td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    // Eventos
+    $("q").oninput = render;
+    $("f").onchange = render;
+    $("btnReload").onclick = () => load();
+    window.onload = () => load();
+
+    // Nota: Las funciones copyRow, renewRow, deleteRow y assignRow 
+    // deben estar conectadas a tus rutas de API en server.js
+  </script>
+</body>
+</html>
