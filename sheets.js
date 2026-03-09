@@ -1,12 +1,15 @@
 const fs = require("fs");
 const { google } = require("googleapis");
 
+// Variables de entorno
 const SHEET_ID = process.env.SHEET_ID;
 const TAB = process.env.SHEET_TAB || "Clientes";
 const CREDENTIALS_PATH = process.env.CREDENTIALS_PATH || "./credentials.json";
-
 const FORCED_LOCALE = (process.env.SHEETS_LOCALE || "").toLowerCase().trim();
 
+/**
+ * Normaliza textos para comparaciones (quita acentos, espacios y pasa a minúsculas)
+ */
 function norm(s) {
   return String(s ?? "")
     .toLowerCase()
@@ -19,197 +22,214 @@ function norm(s) {
     .replace(/[úùü]/g, "u");
 }
 
+/**
+ * Verifica que existan las credenciales necesarias antes de arrancar
+ */
 function requireEnv() {
   if (!SHEET_ID) throw new Error("Falta SHEET_ID en las variables de entorno");
-  if (!process.env.GOOGLE_CREDENTIALS_JSON && !fs.existsSync(CREDENTIALS_PATH)) {
-    throw new Error(`No se encontró GOOGLE_CREDENTIALS_JSON ni el archivo ${CREDENTIALS_PATH}`);
+  
+  // Si no hay variable de Railway Y tampoco existe el archivo local, da error
+  if (!process.env.GOOGLE_CREDS_JSON && !fs.existsSync(CREDENTIALS_PATH)) {
+    throw new Error(`No se encontró GOOGLE_CREDS_JSON ni el archivo ${CREDENTIALS_PATH}`);
   }
 }
 
+/**
+ * Obtiene el cliente de Google Auth (Compatible con Local y Railway)
+ */
 async function getClient() {
+  requireEnv();
+  
   let creds;
+  // 1. Prioridad: Variable de entorno (Para Railway)
   if (process.env.GOOGLE_CREDS_JSON) {
-    creds = JSON.parse(process.env.GOOGLE_CREDS_JSON);
-  } else {
+    try {
+      creds = JSON.parse(process.env.GOOGLE_CREDS_JSON);
+    } catch (e) {
+      throw new Error("La variable GOOGLE_CREDS_JSON no tiene un formato JSON válido");
+    }
+  } 
+  // 2. Segunda opción: Archivo local (Para tu PC)
+  else {
     creds = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf-8"));
   }
-  // ... resto del código
-}
-  }
-  const creds = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf-8"));
-  return new google.auth.GoogleAuth({
-    credentials: creds,
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  }).getClient();
+
+  const client = new google.auth.JWT(
+    creds.client_email,
+    null,
+    creds.private_key,
+    ["https://www.googleapis.com/auth/spreadsheets"]
+  );
+
+  return client;
 }
 
-async function getSheets() {
-  const auth = await getClient();
-  return google.sheets({ version: "v4", auth });
-}
+/**
+ * Lógica de negocio del Panel
+ */
 
-async function getRawRows() {
-  const sheets = await getSheets();
+async function getDashboard() {
+  const client = await getClient();
+  const sheets = google.sheets({ version: "v4", auth: client });
+
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
     range: `${TAB}!A:Z`,
   });
-  return res.data.values || [];
-}
 
-function parseRows(rows) {
-  if (rows.length < 1) return { map: {}, rows: [] };
-  const headers = rows[0].map(h => norm(h));
-  const map = {};
-  headers.forEach((h, i) => { if (h) map[h] = i; });
+  const rows = res.data.values;
+  if (!rows || rows.length === 0) return { headers: [], rows: [] };
 
-  const data = [];
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    const rowNum = i + 1;
-    data.push({
-      row: rowNum,
-      servicio: r[map["servicio"]] || "",
-      correo: r[map["correo"]] || "",
-      contrasena: r[map["contrasena"]] || r[map["password"]] || "",
-      perfil: r[map["perfil"]] || "",
-      pin: r[map["pin"]] || "",
-      nombre: r[map["nombre"]] || "",
-      telefono: r[map["telefono"]] || "",
-      estado: r[map["estado"]] || "",
-      inicio: r[map["fecha de inicio"]] || "",
-      vencimiento: r[map["fecha de vencimiento"]] || "",
-      dias: r[map["dias restantes"]] || ""
+  const headers = rows[0];
+  const dataRows = rows.slice(1).map((r, i) => {
+    const obj = { row: i + 2 };
+    headers.forEach((h, idx) => {
+      const key = norm(h);
+      obj[key] = r[idx] || "";
+      // Mapeo amigable para el frontend
+      if (key === "nombre") obj.nombre = r[idx];
+      if (key === "correo") obj.correo = r[idx];
+      if (key === "servicio") obj.servicio = r[idx];
+      if (key === "estado") obj.estado = r[idx];
+      if (key === "fecha de vencimiento") obj.vencimiento = r[idx];
     });
-  }
-  return { map, rows: data };
+    return obj;
+  });
+
+  return { headers, rows: dataRows };
 }
 
-async function getDashboard() {
-  const raw = await getRawRows();
-  return parseRows(raw);
+async function batchUpdate(updates) {
+  const client = await getClient();
+  const sheets = google.sheets({ version: "v4", auth: client });
+
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: SHEET_ID,
+    resource: {
+      valueInputOption: "USER_ENTERED",
+      data: updates
+    }
+  });
 }
 
 function buildUpdatesForRow(map, rowNumber, data) {
   const updates = [];
-  for (const key in data) {
-    const colName = norm(key);
-    if (map[colName] !== undefined) {
-      const colLetter = String.fromCharCode(65 + map[colName]);
+  for (const [colName, value] of Object.entries(data)) {
+    const colLetter = map[norm(colName)];
+    if (colLetter) {
       updates.push({
         range: `${TAB}!${colLetter}${rowNumber}`,
-        values: [[data[key]]]
+        values: [[value]]
       });
     }
   }
   return updates;
 }
 
-async function batchUpdate(resourceValues) {
-  const sheets = await getSheets();
-  await sheets.spreadsheets.values.batchUpdate({
-    spreadsheetId: SHEET_ID,
-    resource: {
-      valueInputOption: "USER_ENTERED",
-      data: resourceValues
-    }
-  });
-}
-
-function getFormulas(dias) {
-  const isEn = FORCED_LOCALE === "en";
-  return {
-    inicio: isEn ? "=TODAY()" : "=HOY()",
-    vencimiento: isEn ? `=INDIRECT("RC[-1]"; FALSE) + ${dias}` : `=INDIRECT("RC[-1]"; FALSO) + ${dias}`,
-    dias: isEn ? `=INDIRECT("RC[-1]"; FALSE) - TODAY()` : `=INDIRECT("RC[-1]"; FALSO) - HOY()`
-  };
-}
-
-async function renovarFila({ rowNumber, dias }) {
-  const { map } = await getDashboard();
-  const formulas = getFormulas(dias);
-  const updates = buildUpdatesForRow(map, rowNumber, {
-    "Estado": "ACTIVO",
-    "Fecha de inicio": formulas.inicio,
-    "Fecha de vencimiento": formulas.vencimiento,
-    "Días restantes": formulas.dias
-  });
-  await batchUpdate(updates);
-  return { ok: true };
-}
-
-async function updateFila({ rowNumber, data }) {
-  const { map } = await getDashboard();
-  const updates = buildUpdatesForRow(map, rowNumber, data);
-  await batchUpdate(updates);
-  return { ok: true };
-}
+// --- Funciones de acción ---
 
 async function asignarEnFila({ rowNumber, nombre, telefono, dias }) {
-  const { map, rows } = await getDashboard();
-  const target = rows.find(r => Number(r.row) === rowNumber);
-  if (!target) throw new Error("Fila no encontrada");
+  const { headers } = await getDashboard();
+  const map = {};
+  headers.forEach((h, i) => {
+    map[norm(h)] = String.fromCharCode(65 + i);
+  });
 
-  const formulas = getFormulas(dias);
+  const hoy = FORCED_LOCALE === "es" ? "=HOY()" : "=TODAY()";
+  
   const updates = buildUpdatesForRow(map, rowNumber, {
     "Nombre": nombre,
     "Telefono": telefono,
     "Teléfono": telefono,
     "Estado": "ACTIVO",
-    "Fecha de inicio": formulas.inicio,
-    "Fecha de vencimiento": formulas.vencimiento,
-    "Días restantes": formulas.dias
+    "Fecha de inicio": hoy,
+    "Días": dias,
+    "Dias": dias
   });
 
   await batchUpdate(updates);
-  return {
-    servicio: target.servicio,
-    correo: target.correo,
-    contrasena: target.contrasena,
-    perfil: target.perfil,
-    pin: target.pin
-  };
+  return { ok: true };
+}
+
+async function renovarFila(rowNumber, dias) {
+  const { headers } = await getDashboard();
+  const map = {};
+  headers.forEach((h, i) => map[norm(h)] = String.fromCharCode(65 + i));
+
+  const updates = buildUpdatesForRow(map, rowNumber, {
+    "Dias": dias,
+    "Días": dias,
+    "Estado": "ACTIVO"
+  });
+
+  await batchUpdate(updates);
+  return { ok: true };
 }
 
 async function eliminarCliente(rowNumber) {
-  const { map } = await getDashboard();
+  const { headers } = await getDashboard();
+  const map = {};
+  headers.forEach((h, i) => map[norm(h)] = String.fromCharCode(65 + i));
+
   const updates = buildUpdatesForRow(map, rowNumber, {
-    "Nombre": "Disponible", "Telefono": "", "Teléfono": "", "Estado": "",
-    "Fecha de inicio": "", "Fecha de vencimiento": "", "Días restantes": ""
+    "Nombre": "Disponible",
+    "Telefono": "",
+    "Teléfono": "",
+    "Estado": "",
+    "Fecha de inicio": "",
+    "Fecha de vencimiento": "",
+    "Días restantes": ""
   });
+
   await batchUpdate(updates);
   return { ok: true };
 }
 
 async function reasignarCuenta({ fromRow, toRow }) {
-  const { map, rows } = await getDashboard();
+  const { rows, headers } = await getDashboard();
+  const map = {};
+  headers.forEach((h, i) => map[norm(h)] = String.fromCharCode(65 + i));
+
   const src = rows.find(r => Number(r.row) === Number(fromRow));
+  if (!src) throw new Error("No encuentro el cliente origen.");
+
   const dest = rows.find(r => Number(r.row) === Number(toRow));
-
-  if (!src || norm(src.nombre) === "disponible") throw new Error("Origen no válido.");
-  if (!dest || norm(dest.nombre) !== "disponible") throw new Error("Destino no disponible.");
-
-  // EXTRAEMOS LOS DÍAS QUE LE QUEDABAN AL CLIENTE ORIGINAL
-  const diasRestantes = parseInt(src.dias) || 30;
-  const formulas = getFormulas(diasRestantes);
+  if (!dest) throw new Error("No encuentro el destino.");
 
   const updatesDest = buildUpdatesForRow(map, dest.row, {
     "Nombre": src.nombre,
     "Telefono": src.telefono || "",
     "Teléfono": src.telefono || "",
-    "Estado": "ACTIVO",
-    "Fecha de inicio": formulas.inicio, // Nueva fecha de inicio (Hoy)
-    "Fecha de vencimiento": formulas.vencimiento, // Vencimiento basado en sus días restantes
-    "Días restantes": formulas.dias // Nueva fórmula de cuenta atrás
+    "Estado": src.estado || "ACTIVO",
+    "Fecha de inicio": src.inicio || "",
+    "Fecha de vencimiento": src.vencimiento || ""
   });
 
   const updatesSrc = buildUpdatesForRow(map, src.row, {
-    "Nombre": "Disponible", "Telefono": "", "Teléfono": "", "Estado": "",
-    "Fecha de inicio": "", "Fecha de vencimiento": "", "Días restantes": ""
+    "Nombre": "Disponible",
+    "Telefono": "",
+    "Teléfono": "",
+    "Estado": "",
+    "Fecha de inicio": "",
+    "Fecha de vencimiento": ""
   });
 
   await batchUpdate([...updatesDest, ...updatesSrc]);
-  return { ok: true, servicio: src.servicio, correo: dest.correo, contrasena: dest.contrasena, perfil: dest.perfil, pin: dest.pin };
+
+  return { 
+    ok: true, 
+    servicio: src.servicio, 
+    correo: src.correo, 
+    contrasena: src.contrasena || src.password,
+    perfil: src.perfil,
+    pin: src.pin 
+  };
 }
 
-module.exports = { getDashboard, renovarFila, updateFila, asignarEnFila, eliminarCliente, reasignarCuenta };
+module.exports = {
+  getDashboard,
+  renovarFila,
+  asignarEnFila,
+  eliminarCliente,
+  reasignarCuenta
+};
