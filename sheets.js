@@ -4,7 +4,6 @@ const { google } = require("googleapis");
 const SHEET_ID = process.env.SHEET_ID;
 const TAB = process.env.SHEET_TAB || "Clientes";
 const CREDENTIALS_PATH = process.env.CREDENTIALS_PATH || "./credentials.json";
-const FORCED_LOCALE = (process.env.SHEETS_LOCALE || "").toLowerCase().trim();
 
 function norm(s) {
   return String(s ?? "").toLowerCase().trim()
@@ -12,69 +11,88 @@ function norm(s) {
     .replace(/[áàä]/g, "a").replace(/[éèë]/g, "e").replace(/[íìï]/g, "i").replace(/[óòö]/g, "o").replace(/[úùü]/g, "u");
 }
 
+async function getClient() {
+  if (process.env.GOOGLE_CREDENTIALS_JSON) {
+    const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+    return new google.auth.GoogleAuth({
+      credentials: creds,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    }).getClient();
+  }
+  return new google.auth.GoogleAuth({
+    keyFile: CREDENTIALS_PATH,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  }).getClient();
+}
+
+async function getSheets() {
+  const auth = await getClient();
+  return google.sheets({ version: "v4", auth });
+}
+
 function parseRows(rows) {
-  if (rows.length < 1) return { map: {}, rows: [], stats: { total: 0, active: 0, expired: 0, available: 0 } };
+  if (rows.length < 1) return { map: {}, rows: [], availableTotal: 0, availableByService: {} };
   
   const headers = rows[0].map(h => norm(h));
   const map = {};
   headers.forEach((h, i) => { if (h) map[h] = i; });
 
   let parsed = [];
-  let stats = { total: 0, active: 0, expired: 0, available: 0 };
+  let availableTotal = 0;
+  let availableByService = {};
 
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r[map["servicio"]] && !r[map["correo"]]) continue;
 
-    const rowNum = i + 1;
     const nombreRaw = (r[map["nombre"]] || "").trim();
-    const esDisponible = !nombreRaw || norm(nombreRaw) === "disponible";
-
+    const esDisponible = norm(nombreRaw) === "disponible" || !nombreRaw;
+    
     const rawDias = String(r[map["dias restantes"]] || "0").replace(/[^0-9\-]/g, "");
-    let diasVal = parseInt(rawDias);
-    if (isNaN(diasVal)) diasVal = 0;
+    let diasVal = parseInt(rawDias) || 0;
 
-    let estadoFinal = "";
+    let bucket = "activos";
     if (esDisponible) {
-      estadoFinal = "DISPONIBLE";
-      stats.available++;
-    } else {
-      stats.total++; // Cuenta como cliente real
-      if (diasVal <= 0) {
-        estadoFinal = "VENCIDO";
-        stats.expired++;
-      } else {
-        estadoFinal = "ACTIVO";
-        stats.active++;
-      }
+      bucket = "disponible";
+      availableTotal++;
+      const svc = (r[map["servicio"]] || "OTROS").trim().toUpperCase();
+      availableByService[svc] = (availableByService[svc] || 0) + 1;
+    } else if (diasVal <= 0) {
+      bucket = "vencidos";
+    } else if (diasVal <= 3) {
+      bucket = "porvencer";
     }
 
     parsed.push({
-      row: rowNum,
+      row: i + 1,
       servicio: r[map["servicio"]] || "",
       correo: r[map["correo"]] || "",
       contrasena: r[map["contrasena"]] || r[map["password"]] || "",
       perfil: r[map["perfil"]] || "",
       pin: r[map["pin"]] || "",
-      nombre: esDisponible ? "Disponible" : nombreRaw,
+      nombre: nombreRaw,
       telefono: r[map["telefono"]] || "",
-      estado: estadoFinal,
-      inicio: r[map["fecha de inicio"]] || "",
       vencimiento: r[map["fecha de vencimiento"]] || "",
-      dias: diasVal
+      dias: diasVal,
+      bucket: bucket
     });
   }
 
-  // ORDEN: Vencidos (1), Activos (2), Disponibles (3)
+  // ORDEN: Vencidos -> Por Vencer -> Activos -> Disponibles
   parsed.sort((a, b) => {
-    const p = { "VENCIDO": 1, "ACTIVO": 2, "DISPONIBLE": 3 };
-    if (p[a.estado] !== p[b.estado]) return p[a.estado] - p[b.estado];
-    return a.dias - b.dias;
+    const p = { "vencidos": 1, "porvencer": 2, "activos": 3, "disponible": 4 };
+    return p[a.bucket] - p[b.bucket] || a.dias - b.dias;
   });
 
-  return { map, rows: parsed, stats };
+  return { map, rows: parsed, availableTotal, availableByService };
 }
 
-// ... (El resto de funciones como getDashboard, renovarFila, etc., se mantienen igual)
-// Asegúrate de exportar correctamente al final:
-module.exports = { getDashboard, renovarFila, updateFila, asignarEnFila, eliminarCliente, reasignarCuenta };
+async function getDashboard() {
+  const sheets = await getSheets();
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: `${TAB}!A:Z` });
+  return parseRows(res.data.values || []);
+}
+
+// ... (Aquí irían tus funciones de renovar, asignar, etc. que ya tienes)
+// Solo asegúrate de exportar al final:
+module.exports = { getDashboard };
