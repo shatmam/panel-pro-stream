@@ -28,361 +28,265 @@
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--txt);
-      background: var(--bg0);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      color:var(--txt);
+      background:
+        radial-gradient(900px 520px at 12% 8%, rgba(79,140,255,.22), transparent 60%),
+        radial-gradient(900px 600px at 88% 8%, rgba(176,148,255,.20), transparent 55%),
+        radial-gradient(820px 520px at 50% 92%, rgba(35,213,242,.12), transparent 62%),
+        linear-gradient(180deg, var(--bg0), var(--bg1) 40%, var(--bg2));
     }
 
-    header{
-      background: var(--bg1);
-      padding: 20px 25px;
-      border-bottom: 1px solid var(--line);
-      flex-shrink: 0;
-      z-index: 10;
-    }
+    .wrap{max-width:1400px;margin:0 auto;padding:22px 18px 70px}
 
-    .header-top{
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
+    /* Tu diseño de Header */
+    .topbar{ display:flex;align-items:center;justify-content:space-between; gap:14px;flex-wrap:wrap; margin-bottom:18px; }
+    .brand{display:flex;align-items:center;gap:14px;}
+    .logo{
+      width:50px;height:50px;border-radius:18px;
+      display:grid;place-items:center; font-weight:1000;
+      background: linear-gradient(135deg, rgba(79,140,255,.95), rgba(176,148,255,.95));
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: 0 18px 50px rgba(79,140,255,.16);
     }
-    .header-top h1{
-      margin: 0;
-      font-size: 1.4em;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .header-top h1 span{ color: var(--blue); }
+    .title h1{margin:0;font-size:22px;line-height:1}
+    .title .sub{margin:0;color:var(--muted);font-size:12px}
 
-    .kpis{
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 15px;
-    }
+    /* KPIs */
+    .kpis{ display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:16px; margin-bottom:18px; }
     .kpi{
-      background: var(--bg2);
-      padding: 15px;
-      border-radius: 16px;
-      border: 1px solid var(--line);
-      transition: 0.3s;
-      position: relative;
-      overflow: hidden;
+      background: rgba(12,16,35,.62); border:1px solid rgba(255,255,255,.10);
+      border-radius: 22px; padding: 22px 18px; text-align:center; backdrop-filter: blur(16px);
     }
-    .kpi::after{
-      content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--line);
+    .kpi .n{ font-size:44px; font-weight:1000; margin:0; }
+    .kpi.red .n{ color: var(--red); }
+    .kpi .lbl{ margin-top:6px; color: rgba(181,192,255,.85); font-size:12px; letter-spacing:1.4px; text-transform:uppercase; }
+
+    /* Panel de Asignación (Lo que te gustó) */
+    .panel{ background: rgba(12,16,35,.62); border:1px solid rgba(255,255,255,.10); border-radius: 22px; padding:18px; }
+    .assign{ display:grid; grid-template-columns: 1.3fr 1.3fr 1.2fr auto; gap:14px; align-items:end; margin-bottom:14px; }
+    .assign2{ display:grid; grid-template-columns: 2fr 1fr; gap:14px; align-items:end; margin-bottom:16px; }
+
+    .input, select{
+      width:100%; padding:12px 14px; border-radius:14px; border:1px solid var(--line);
+      background: rgba(10,14,35,.65); color:var(--txt); outline:none;
     }
-    .kpi.vencidos::after{ background: var(--red); }
-    .kpi.porvencer::after{ background: var(--yellow); }
-    .kpi.activos::after{ background: var(--green); }
-    .kpi.total::after{ background: var(--blue); }
-    .kpi.stock::after{ background: var(--cyan); }
-
-    .kpi b{ display: block; font-size: 1.8em; line-height: 1; margin-bottom: 5px; }
-    .kpi span{ font-size: 0.75em; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
-
-    .controls{
-      background: var(--bg1);
-      padding: 15px 25px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      border-bottom: 1px solid var(--line);
-      flex-wrap: wrap;
-    }
-
-    .search-box{ flex: 1; position: relative; min-width: 250px; }
-    input, select{
-      width: 100%;
-      background: var(--bg2);
-      border: 1px solid var(--line);
-      color: #fff;
-      padding: 10px 15px;
-      border-radius: 12px;
-      outline: none;
-      font-size: 0.95em;
-      transition: 0.2s;
-    }
-    input:focus{ border-color: var(--blue); box-shadow: 0 0 0 3px rgba(79,140,255,0.15); }
-
-    .main-scroll{ flex: 1; overflow-y: auto; padding: 25px; background: var(--bg0); }
-
-    table{
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0 8px;
-    }
-    th{
-      text-align: left;
-      padding: 0 15px 10px;
-      color: var(--muted);
-      font-size: 0.75em;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    tr.row-item{
-      background: var(--bg1);
-      transition: 0.2s;
-    }
-    tr.row-item:hover{ background: var(--bg2); transform: translateY(-1px); }
-    td{ padding: 16px 15px; }
-    td:first-child{ border-radius: 15px 0 0 15px; }
-    td:last-child{ border-radius: 0 15px 15px 0; text-align: right; }
-
-    .svc-name{ font-weight: 800; color: var(--txt); font-size: 1em; }
-    .svc-mail{ font-size: 0.85em; color: var(--muted); margin-top: 2px; }
-
-    .badge{
-      padding: 6px 12px;
-      border-radius: 10px;
-      font-size: 0.75em;
-      font-weight: 800;
-      text-transform: uppercase;
-    }
-    .badge-vencido{ background: rgba(255,59,95,0.12); color: var(--red); }
-    .badge-activo{ background: rgba(24,201,100,0.12); color: var(--green); }
-    .badge-porvencer{ background: rgba(245,179,1,0.12); color: var(--yellow); }
-    .badge-disponible{ background: rgba(255,255,255,0.05); color: #fff; border: 1px dashed rgba(255,255,255,0.2); }
-
     .btn{
-      padding: 10px 20px;
-      border-radius: 12px;
-      border: none;
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 0.9em;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: 0.2s;
+      border:0; cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:900;
+      background: linear-gradient(135deg, rgba(35,213,242,.95), rgba(79,140,255,.95));
+      color:#06101a;
     }
-    .btn-blue{ background: var(--blue); color: #fff; }
-    .btn-green{ background: var(--green); color: #fff; }
-    .btn-icon{
-      background: var(--bg2);
-      color: #fff;
-      width: 38px; height: 38px;
-      display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 12px; border: 1px solid var(--line);
-      cursor: pointer;
-      font-size: 1.1em;
-    }
+    .btn-green{ background: linear-gradient(135deg, rgba(24,201,100,.95), rgba(35,213,242,.75)); }
 
-    /* MODALES */
-    .modal{
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(8px);
-      display: none; align-items: center; justify-content: center;
-      z-index: 1000; padding: 20px;
-    }
-    .modal-content{
-      background: var(--bg1);
-      width: 100%; max-width: 480px;
-      border-radius: 24px;
-      padding: 30px;
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow);
-    }
+    /* Tabla */
+    .tablewrap{ border-radius: 18px; border:1px solid rgba(255,255,255,.10); overflow:auto; background: rgba(9,12,28,.35); }
+    table{ width:100%; border-collapse:collapse; min-width: 1000px; }
+    th, td{ padding: 16px 14px; border-bottom:1px solid rgba(255,255,255,.06); font-size: 13px; }
+    th{ color: rgba(181,192,255,.88); text-transform:uppercase; font-size:11px; letter-spacing:.9px; }
 
-    #status{ font-size: 0.8em; background: var(--bg2); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--line); }
-    .txt-red{ color: var(--red); font-weight: 800; }
+    .actions{ display:flex; gap:8px; }
+    .a-btn{ border:0; cursor:pointer; padding:8px 12px; border-radius: 10px; font-weight:1000; font-size:11px; color:#06101a; }
+    .a-copy{ background: var(--cyan); }
+    .a-renew{ background: var(--green); }
+    .a-del{ background: var(--red); color:#fff; }
+    .a-move{ background: var(--yellow); }
+
+    .mini{ color: rgba(181,192,255,.75); font-size:12px; }
+    .badge-status{ padding:4px 10px; border-radius: 999px; font-weight:800; font-size:11px; }
+    .badge-status.red{ background: rgba(255,59,95,.14); color:var(--red); }
+    .badge-status.green{ background: rgba(24,201,100,.14); color:var(--green); }
   </style>
 </head>
-<body>
 
-  <header>
-    <div class="header-top">
-      <h1>SISTEMA <span>STREAMING</span></h1>
-      <div id="status">Iniciando...</div>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">SS</div>
+        <div class="title">
+          <h1>SISTEMA STREAMING</h1>
+          <p class="sub">administración • ventas • control</p>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px">
+        <input class="input" id="adminKey" placeholder="Admin Key" style="width:180px" />
+        <button class="btn" id="btnReload" style="background:rgba(255,255,255,0.1); color:#fff">🔄</button>
+      </div>
     </div>
 
     <div class="kpis">
-      <div class="kpi total">
-        <b id="cTotal">0</b>
-        <span>Clientes Totales</span>
-      </div>
-      <div class="kpi vencidos">
-        <b id="cVencidos">0</b>
-        <span>Vencidos</span>
-      </div>
-      <div class="kpi porvencer">
-        <b id="cPorVencer">0</b>
-        <span>Por Vencer</span>
-      </div>
-      <div class="kpi activos">
-        <b id="cActivos">0</b>
-        <span>Activos</span>
-      </div>
-      <div class="kpi stock">
-        <b id="availTotal">0</b>
-        <span>Stock Disponible</span>
-      </div>
+      <div class="kpi"><p class="n" id="cActivos">0</p><div class="lbl">ACTIVOS</div></div>
+      <div class="kpi red"><p class="n" id="cVencidos">0</p><div class="lbl">VENCIDOS</div></div>
+      <div class="kpi"><p class="n" id="cTotal">0</p><div class="lbl">TOTAL CLIENTES</div></div>
     </div>
-  </header>
 
-  <div class="controls">
-    <div class="search-box">
-      <input type="text" id="q" placeholder="Buscar por cliente, cuenta o servicio...">
-    </div>
-    <select id="f" style="width: auto;">
-      <option value="">Filtrar Estado</option>
-      <option value="vencidos">Vencidos</option>
-      <option value="porvencer">Por Vencer</option>
-      <option value="activos">Activos</option>
-      <option value="disponible">Solo Stock (Disponibles)</option>
-    </select>
-    <button id="btnAssign" class="btn btn-green">➕ Nueva Venta</button>
-    <button id="btnReload" class="btn-icon" title="Actualizar">🔄</button>
-  </div>
+    <div class="panel">
+      <div class="assign">
+        <div><div style="font-size:11px; margin-bottom:5px">SERVICIO</div><select id="asSvc" class="input"></select></div>
+        <div><div style="font-size:11px; margin-bottom:5px">CUENTA DISPONIBLE</div><select id="asAccount" class="input"></select></div>
+        <div><div style="font-size:11px; margin-bottom:5px">NOMBRE CLIENTE</div><input id="asName" class="input" placeholder="Nombre" /></div>
+        <button id="btnAssign" class="btn btn-green">✓ REGISTRAR VENTA</button>
+      </div>
 
-  <div class="main-scroll">
-    <div id="errorBox" style="display:none; background:var(--red); color:white; padding:15px; border-radius:12px; margin-bottom:20px;"></div>
-    <table>
-      <thead>
-        <tr>
-          <th>Servicio y Cuenta</th>
-          <th>Cliente</th>
-          <th>Estado</th>
-          <th>Días</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
+      <div class="assign2">
+        <div><div style="font-size:11px; margin-bottom:5px">WHATSAPP / DÍAS</div>
+          <div style="display:flex; gap:10px">
+            <input id="asTel" class="input" placeholder="Ej: 1809..." style="flex:2" />
+            <input id="asDays" class="input" type="number" value="30" style="flex:1" />
+          </div>
+        </div>
+        <div><div style="font-size:11px; margin-bottom:5px">FILTRAR LISTA</div>
+          <select id="f" class="input">
+            <option value="">TODOS</option>
+            <option value="vencidos">VENCIDOS</option>
+            <option value="porvencer">POR VENCER</option>
+            <option value="activos">ACTIVOS</option>
+          </select>
+        </div>
+      </div>
 
-  <div id="modAssign" class="modal">
-    <div class="modal-content">
-      <h2 style="margin-top:0">Nueva Asignación</h2>
-      <div style="display:grid; gap:15px">
-        <input type="text" id="asNom" placeholder="Nombre del Cliente">
-        <input type="text" id="asTel" placeholder="WhatsApp (Ej: 18091234567)">
-        <select id="asSvc"></select>
-        <select id="asAcc"></select>
-        <input type="number" id="asDias" value="30" placeholder="Días de Servicio">
-        <button id="btnDoAssign" class="btn btn-blue" style="justify-content:center">Confirmar Venta</button>
-        <button onclick="$('modAssign').style.display='none'" class="btn" style="background:transparent; color:var(--muted); justify-content:center">Cancelar</button>
+      <div style="margin-bottom:15px"><input class="input" id="q" placeholder="Buscar cliente o cuenta..." /></div>
+      <div id="status" style="font-size:12px; margin-bottom:10px; color:var(--muted)">Cargando...</div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>SERVICIO</th>
+              <th>CUENTA</th>
+              <th>CLIENTE</th>
+              <th>ESTADO</th>
+              <th>ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tb"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <script>
-    const $ = id => document.getElementById(id);
     let allRows = [];
-    let lastLoadAt = 0;
+    let availableMapByService = {};
+    const $ = id => document.getElementById(id);
 
-    async function api(path, opts={}){
-      const key = localStorage.getItem("admin_key");
+    async function api(path, opts = {}) {
+      const key = $("adminKey").value.trim();
       const res = await fetch(path, {
         ...opts,
-        headers: { ...opts.headers, "Content-Type":"application/json", "x-admin-key": key }
+        headers: { "Content-Type": "application/json", "x-admin-key": key, ...(opts.headers || {}) }
       });
-      if(res.status === 401) throw new Error("No autorizado");
-      const data = await res.json();
-      if(!data.ok) throw new Error(data.error || "Error API");
-      return data;
+      return await res.json();
     }
 
-    function setStatus(t){ $("status").textContent = t; }
-
-    async function load(quiet=false){
-      if(!quiet) setStatus("Sincronizando...");
-      try{
+    async function load() {
+      $("status").textContent = "Sincronizando...";
+      try {
         const data = await api("/api/dashboard");
-        allRows = data.rows || [];
+        // Filtramos para no mostrar filas vacías del Excel
+        allRows = (data.rows || []).filter(r => (r.servicio || r.correo || r.nombre));
 
-        // ✅ LÓGICA DE CONTADORES: Solo cuenta clientes reales
-        const c = { vencidos:0, porvencer:0, activos:0, total:0 };
+        // Contadores Reales (Excluyendo los "Disponible")
+        const c = { vencidos: 0, activos: 0, total: 0 };
+        availableMapByService = {};
+
         allRows.forEach(r => {
-          if(r.bucket !== "disponible"){
+          const isDisp = String(r.nombre).toLowerCase().trim() === "disponible";
+          if (isDisp) {
+            const s = r.servicio || "OTROS";
+            if (!availableMapByService[s]) availableMapByService[s] = [];
+            availableMapByService[s].push(r);
+          } else {
             c.total++;
-            if(r.bucket === "vencidos") c.vencidos++;
-            else if(r.bucket === "porvencer") c.porvencer++;
-            else if(r.bucket === "activos") c.activos++;
+            if (r.bucket === "vencidos") c.vencidos++;
+            else c.activos++;
           }
         });
 
         $("cTotal").textContent = c.total;
         $("cVencidos").textContent = c.vencidos;
-        $("cPorVencer").textContent = c.porvencer;
         $("cActivos").textContent = c.activos;
-        $("availTotal").textContent = data.availableTotal || 0;
 
+        updateDropdowns();
         render();
-        if(!quiet) setStatus("Sincronizado ✅");
-      }catch(e){
-        if(e.message === "No autorizado"){
-          const k = prompt("Introduce tu Admin Key:");
-          if(k){ localStorage.setItem("admin_key", k); load(); }
-        } else {
-          setStatus("Error ❌");
-          alert(e.message);
-        }
+        $("status").textContent = "Listo ✅";
+      } catch (e) { $("status").textContent = "Error de conexión"; }
+    }
+
+    function updateDropdowns() {
+      const svcs = Object.keys(availableMapByService).sort();
+      const selSvc = $("asSvc");
+      const currentSvc = selSvc.value;
+      
+      selSvc.innerHTML = `<option value="">Seleccionar...</option>` + 
+        svcs.map(s => `<option value="${s}">${s} (${availableMapByService[s].length})</option>`).join("");
+      
+      if (currentSvc) {
+        selSvc.value = currentSvc;
+        fillAccounts();
       }
     }
 
-    function render(){
+    function fillAccounts() {
+      const svc = $("asSvc").value;
+      const list = availableMapByService[svc] || [];
+      $("asAccount").innerHTML = list.map(r => `<option value="${r.row}">${r.correo} (P:${r.perfil})</option>`).join("");
+    }
+
+    function render() {
       const q = $("q").value.toLowerCase();
       const f = $("f").value;
-      const body = $("tableBody");
-      body.innerHTML = "";
+      const tb = $("tb");
+      tb.innerHTML = "";
 
-      const filtered = allRows.filter(r => {
+      allRows.filter(r => {
         const matchQ = !q || (r.nombre + r.correo + r.servicio).toLowerCase().includes(q);
         const matchF = !f || r.bucket === f;
         return matchQ && matchF;
-      });
-
-      filtered.forEach(r => {
+      }).forEach(r => {
+        const isD = String(r.nombre).toLowerCase().trim() === "disponible";
         const tr = document.createElement("tr");
-        tr.className = "row-item";
-        const isV = r.bucket === "vencidos";
-        const isD = r.bucket === "disponible";
-
         tr.innerHTML = `
+          <td style="color:var(--cyan); font-weight:bold">${r.servicio}</td>
+          <td><div>${r.correo}</div><div class="mini">P:${r.perfil} | PIN:${r.pin}</div></td>
+          <td>${isD ? '<span style="color:var(--muted)">DISPONIBLE</span>' : `<b>${r.nombre}</b><div class="mini">${r.telefono}</div>`}</td>
+          <td><span class="badge-status ${r.bucket === 'vencidos' ? 'red' : 'green'}">${r.dias} DÍAS</span></td>
           <td>
-            <div class="svc-name">${r.servicio}</div>
-            <div class="svc-mail">${r.correo}</div>
-          </td>
-          <td>${isD ? '<span style="color:var(--muted)">-</span>' : r.nombre}</td>
-          <td><span class="badge badge-${r.bucket}">${r.bucket.replace('porvencer','Pox Vencer').toUpperCase()}</span></td>
-          <td class="${isV ? 'txt-red' : ''}">${isD ? '-' : r.dias}</td>
-          <td>
-            <button class="btn-icon" onclick="copyClient(${r.row})">📋</button>
-            <button class="btn-icon" onclick="editRow(${r.row})">✏️</button>
-            ${isV ? `<button class="btn-icon" style="color:var(--green)" onclick="renewRow(${r.row})">🔄</button>` : ''}
-            <button class="btn-icon" style="color:var(--red)" onclick="deleteRow(${r.row})">🗑️</button>
+            <div class="actions">
+              <button class="a-btn a-copy" onclick="copyRow(${r.row})">📋</button>
+              ${r.bucket === 'vencidos' ? `<button class="a-btn a-renew" onclick="renovar(${r.row})">🔄</button>` : ''}
+              <button class="a-btn a-del" onclick="liberar(${r.row})">🗑️</button>
+            </div>
           </td>
         `;
-        body.appendChild(tr);
+        tb.appendChild(tr);
       });
     }
 
-    // Funciones de acción (deben estar conectadas a tus rutas en server.js)
-    async function renewRow(row){
-      const d = prompt("¿Cuántos días renovar?", "30");
-      if(!d) return;
-      await api("/api/renovar", { method:"POST", body: JSON.stringify({ row, dias:Number(d) }) });
-      load(true);
+    async function asignar() {
+      const row = $("asAccount").value;
+      const nombre = $("asName").value;
+      const telefono = $("asTel").value;
+      const dias = $("asDays").value;
+
+      if (!row || !nombre) return alert("Faltan datos");
+
+      const res = await api("/api/asignar", {
+        method: "POST",
+        body: JSON.stringify({ row: Number(row), nombre, telefono, dias: Number(dias) })
+      });
+
+      if (res.ok) {
+        alert("✅ Venta registrada y mensaje copiado");
+        load();
+      }
     }
 
-    async function deleteRow(row){
-      if(!confirm("¿Eliminar este cliente y liberar la cuenta?")) return;
-      await api("/api/delete", { method:"POST", body: JSON.stringify({ row }) });
-      load(true);
-    }
-
+    $("asSvc").onchange = fillAccounts;
+    $("btnAssign").onclick = asignar;
+    $("btnReload").onclick = load;
     $("q").oninput = render;
     $("f").onchange = render;
-    $("btnReload").onclick = () => load();
-    $("btnAssign").onclick = () => $("modAssign").style.display='flex';
-    window.onload = () => load();
+    window.onload = load;
   </script>
 </body>
 </html>
