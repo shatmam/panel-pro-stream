@@ -1,55 +1,99 @@
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
 import { google } from "googleapis";
 
 const app = express();
-
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
-const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
-  scopes: ["https://www.googleapis.com/auth/spreadsheets"]
-});
+let sheets;
 
-const sheets = google.sheets({ version: "v4", auth });
+async function initGoogle() {
+
+  try {
+
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+    });
+
+    sheets = google.sheets({ version: "v4", auth });
+
+    console.log("Google Sheets conectado");
+
+  } catch (err) {
+
+    console.error("Error credenciales:", err.message);
+
+  }
+
+}
 
 function norm(v) {
   return (v || "").toString().trim().toLowerCase();
 }
 
 async function getRows() {
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
-    range: "Clientes!A2:M"
-  });
 
-  return res.data.values || [];
+  try {
+
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: "Clientes!A2:M"
+    });
+
+    return res.data.values || [];
+
+  } catch (err) {
+
+    console.error("Error leyendo sheet:", err.message);
+    return [];
+
+  }
+
 }
 
 async function updateRow(row, values) {
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `Clientes!A${row}:M${row}`,
-    valueInputOption: "USER_ENTERED",
-    requestBody: {
-      values: [values]
-    }
-  });
+
+  try {
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `Clientes!A${row}:M${row}`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [values] }
+    });
+
+  } catch (err) {
+
+    console.error("Error actualizando fila:", err.message);
+
+  }
+
 }
 
+app.get("/", (req, res) => {
+  res.send("Servidor Streaming OK");
+});
+
 app.get("/cuentas", async (req, res) => {
+
   const rows = await getRows();
+
   res.json(rows);
+
 });
 
 app.post("/asignar", async (req, res) => {
+
   try {
+
     const { nombre, telefono, servicio } = req.body;
 
     const rows = await getRows();
@@ -58,13 +102,10 @@ app.post("/asignar", async (req, res) => {
 
       const row = rows[i];
 
-      const estadoNombre = norm(row[1]);
+      const cliente = norm(row[1]);
       const servicioRow = norm(row[3]);
 
-      if (
-        (estadoNombre === "disponible" || estadoNombre === "") &&
-        servicioRow === norm(servicio)
-      ) {
+      if ((cliente === "disponible" || cliente === "") && servicioRow === norm(servicio)) {
 
         const rowNumber = i + 2;
 
@@ -85,80 +126,109 @@ app.post("/asignar", async (req, res) => {
 
         await updateRow(rowNumber, newRow);
 
-        return res.json({
-          ok: true,
-          cuenta: newRow
-        });
+        return res.json({ ok: true, cuenta: newRow });
+
       }
+
     }
 
     res.json({ ok: false, msg: "No hay cuentas disponibles" });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    console.error(err);
+    res.json({ ok: false });
+
   }
+
 });
 
 app.post("/liberar", async (req, res) => {
 
-  const { codigo } = req.body;
+  try {
 
-  const rows = await getRows();
+    const { codigo } = req.body;
 
-  for (let i = 0; i < rows.length; i++) {
+    const rows = await getRows();
 
-    const row = rows[i];
+    for (let i = 0; i < rows.length; i++) {
 
-    if (row[0] === codigo) {
+      if (rows[i][0] === codigo) {
 
-      const rowNumber = i + 2;
+        const rowNumber = i + 2;
 
-      const newRow = [...row];
+        const row = rows[i];
 
-      newRow[1] = "Disponible";
-      newRow[2] = "";
-      newRow[8] = "";
-      newRow[9] = "";
-      newRow[11] = "";
+        row[1] = "Disponible";
+        row[2] = "";
+        row[8] = "";
+        row[9] = "";
+        row[11] = "";
 
-      await updateRow(rowNumber, newRow);
+        await updateRow(rowNumber, row);
 
-      return res.json({ ok: true });
+        return res.json({ ok: true });
+
+      }
+
     }
+
+    res.json({ ok: false });
+
+  } catch (err) {
+
+    console.error(err);
+    res.json({ ok: false });
+
   }
 
-  res.json({ ok: false });
 });
 
 app.post("/renovar", async (req, res) => {
 
-  const { codigo, dias } = req.body;
+  try {
 
-  const rows = await getRows();
+    const { codigo, dias } = req.body;
 
-  for (let i = 0; i < rows.length; i++) {
+    const rows = await getRows();
 
-    const row = rows[i];
+    for (let i = 0; i < rows.length; i++) {
 
-    if (row[0] === codigo) {
+      if (rows[i][0] === codigo) {
 
-      const rowNumber = i + 2;
+        const rowNumber = i + 2;
 
-      const venc = new Date(row[9]);
-      venc.setDate(venc.getDate() + Number(dias));
+        const row = rows[i];
 
-      const newRow = [...row];
-      newRow[9] = venc.toISOString().split("T")[0];
+        const venc = new Date(row[9]);
 
-      await updateRow(rowNumber, newRow);
+        venc.setDate(venc.getDate() + Number(dias));
 
-      return res.json({ ok: true });
+        row[9] = venc.toISOString().split("T")[0];
+
+        await updateRow(rowNumber, row);
+
+        return res.json({ ok: true });
+
+      }
+
     }
+
+    res.json({ ok: false });
+
+  } catch (err) {
+
+    console.error(err);
+    res.json({ ok: false });
+
   }
 
-  res.json({ ok: false });
 });
 
-app.listen(PORT, () => {
-  console.log("Servidor corriendo en puerto " + PORT);
+initGoogle().then(() => {
+
+  app.listen(PORT, () => {
+    console.log("Servidor corriendo en puerto " + PORT);
+  });
+
 });
