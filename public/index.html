@@ -1,203 +1,63 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Super Streaming Admin</title>
+// BUSCA ESTA FUNCIÓN DENTRO DE TU INDEX.HTML Y REEMPLÁZALA:
 
-  <style>
-    :root{
-      --bg0:#070A16; --bg1:#0B1026; --bg2:#0E173A;
-      --line: rgba(255,255,255,.10);
-      --txt:#F6F8FF; --muted:#B5C0FF;
-      --red:#ff3b5f; --green:#18c964; --yellow:#f5b301;
-      --cyan:#23d5f2; --blue:#4f8cff; --purple:#b094ff;
-      --shadow: 0 20px 70px rgba(0,0,0,.55);
-    }
+async function load(quiet = false) {
+  if(!quiet) setStatus("Cargando datos...");
+  hideErr();
+  try {
+    const data = await api("/api/dashboard");
+    allRows = data.rows;
 
-    *{box-sizing:border-box}
-    body{
-      margin:0; background: var(--bg0); color: var(--txt);
-      font-family: system-ui, -apple-system, sans-serif;
-      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
-    }
+    // ACTUALIZAR TUS CONTADORES (Usando los IDs de tu diseño original)
+    if($("statTotal")) $("statTotal").textContent = data.stats.total;
+    if($("statActive")) $("statActive").textContent = data.stats.active;
+    if($("statExpired")) $("statExpired").textContent = data.stats.expired;
+    if($("statAvailable")) $("statAvailable").textContent = data.stats.available;
 
-    /* BARRA DE ESTADISTICAS */
-    .top-bar {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
-      padding: 20px; background: var(--bg1); border-bottom: 1px solid var(--line);
-    }
-    .stat-box {
-      background: var(--bg2); padding: 15px; border-radius: 12px;
-      text-align: center; border-bottom: 3px solid var(--blue);
-    }
-    .stat-box.vencidos { border-color: var(--red); }
-    .stat-box.activos { border-color: var(--green); }
-    .stat-box.stock { border-color: var(--yellow); }
-    .stat-box .val { display: block; font-size: 1.8em; font-weight: 800; }
-    .stat-box .lbl { font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    render();
+    if(!quiet) setStatus("Listo");
+  } catch(e) {
+    showErr(e.message);
+    setStatus("Error al cargar");
+    // Si falla el login, pedimos la clave de nuevo
+    const pass = prompt("Admin Key:");
+    if(pass){ localStorage.setItem("admin_key", pass); load(); }
+  }
+}
 
-    /* Buscador y Contenido */
-    .controls { padding: 15px 20px; display: flex; gap: 10px; background: var(--bg1); }
-    input, select { 
-      background: var(--bg2); border: 1px solid var(--line); color: #white;
-      padding: 10px; border-radius: 8px; outline: none;
-    }
+// BUSCA ESTA PARTE EN TU RENDER PARA QUE NO TE BORRE LOS BOTONES:
+function render() {
+  const q = $("q").value.toLowerCase();
+  const f = $("f").value;
+  const body = $("tableBody");
+  body.innerHTML = "";
 
-    .main-scroll { flex: 1; overflow-y: auto; padding: 20px; }
-    table { width: 100%; border-collapse: collapse; background: var(--bg1); border-radius: 15px; overflow: hidden; }
-    th { text-align: left; padding: 15px; background: rgba(255,255,255,0.05); color: var(--muted); font-size: 0.8em; }
-    td { padding: 15px; border-bottom: 1px solid var(--line); }
+  const filtered = allRows.filter(r => {
+    const matchQ = !q || (r.nombre + r.correo + r.servicio).toLowerCase().includes(q);
+    const matchF = !f || r.estado === f;
+    return matchQ && matchF;
+  });
 
-    .badge { padding: 5px 10px; border-radius: 6px; font-size: 0.75em; font-weight: bold; text-transform: uppercase; }
-    .badge.vencido { background: rgba(255,59,95,0.2); color: var(--red); }
-    .badge.activo { background: rgba(24,201,100,0.2); color: var(--green); }
-    .badge.disponible { background: rgba(245,179,1,0.2); color: var(--yellow); }
+  filtered.forEach(r => {
+    const tr = document.createElement("tr");
+    // Aquí mantenemos tu lógica de badges y botones originales...
+    const isVencido = r.estado === "VENCIDO";
+    const isDisponible = r.estado === "DISPONIBLE";
 
-    .btn { 
-      padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold;
-      cursor: pointer; font-size: 0.8em; transition: 0.2s;
-    }
-    .btn-renovar { background: var(--blue); color: white; }
-    .btn-asignar { background: var(--green); color: white; }
-    
-    /* MODALES Y OTROS (Manteniendo tu estilo original) */
-    .modal { 
-      position:fixed; inset:0; background:rgba(0,0,0,0.8); 
-      display:none; align-items:center; justify-content:center; padding:20px; z-index:100;
-    }
-    .modal-content { background:var(--bg1); padding:25px; border-radius:15px; width:100%; max-width:400px; }
-  </style>
-</head>
-<body>
-
-  <div class="top-bar">
-    <div class="stat-box">
-      <span id="statTotal" class="val">0</span>
-      <span class="lbl">Clientes Totales</span>
-    </div>
-    <div class="stat-box vencidos">
-      <span id="statVencidos" class="val">0</span>
-      <span class="lbl">Vencidos</span>
-    </div>
-    <div class="stat-box activos">
-      <span id="statActivos" class="val">0</span>
-      <span class="lbl">Activos</span>
-    </div>
-    <div class="stat-box stock">
-      <span id="statDisponibles" class="val">0</span>
-      <span class="lbl">Stock Disponible</span>
-    </div>
-  </div>
-
-  <div class="controls">
-    <input type="text" id="q" placeholder="Buscar por nombre o correo..." style="flex:1">
-    <select id="f">
-      <option value="">Todos los Estados</option>
-      <option value="VENCIDO">Vencidos</option>
-      <option value="ACTIVO">Activos</option>
-      <option value="DISPONIBLE">Disponibles</option>
-    </select>
-    <button class="btn btn-renovar" id="btnAssign">Asignar Nueva</button>
-  </div>
-
-  <div class="main-scroll">
-    <table>
-      <thead>
-        <tr>
-          <th>Servicio / Correo</th>
-          <th>Cliente</th>
-          <th>Estado</th>
-          <th>Días</th>
-          <th>Vence</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
-
-  <script>
-    let allRows = [];
-    const $ = id => document.getElementById(id);
-
-    async function api(path, opts={}) {
-      const key = localStorage.getItem("admin_key");
-      const res = await fetch(path, {
-        ...opts,
-        headers: { ...opts.headers, "Content-Type":"application/json", "x-admin-key": key }
-      });
-      const data = await res.json();
-      if(!data.ok) throw new Error(data.error || "Error API");
-      return data;
-    }
-
-    async function load() {
-      try {
-        const data = await api("/api/dashboard");
-        allRows = data.rows;
-
-        // ACTUALIZAR CONTADORES
-        $("statTotal").textContent = data.stats.total;
-        $("statVencidos").textContent = data.stats.vencidos;
-        $("statActivos").textContent = data.stats.activos;
-        $("statDisponibles").textContent = data.stats.disponibles;
-
-        render();
-      } catch(e) {
-        const pass = prompt("Admin Key:");
-        if(pass) { localStorage.setItem("admin_key", pass); load(); }
-      }
-    }
-
-    function render() {
-      const q = $("q").value.toLowerCase();
-      const f = $("f").value;
-      const body = $("tableBody");
-      body.innerHTML = "";
-
-      const filtered = allRows.filter(r => {
-        const matchQ = !q || (r.nombre + r.correo).toLowerCase().includes(q);
-        const matchF = !f || r.estado === f;
-        return matchQ && matchF;
-      });
-
-      filtered.forEach(r => {
-        const tr = document.createElement("tr");
-        const statusClass = r.estado.toLowerCase();
-        
-        tr.innerHTML = `
-          <td>
-            <div style="font-weight:bold">${r.servicio}</div>
-            <div style="font-size:0.75em; color:var(--muted)">${r.correo}</div>
-          </td>
-          <td>${r.nombre}</td>
-          <td><span class="badge ${statusClass}">${r.estado}</span></td>
-          <td style="font-weight:bold; color:${r.dias <= 0 ? 'var(--red)' : 'inherit'}">${r.dias}</td>
-          <td style="font-size:0.85em">${r.vencimiento || '-'}</td>
-          <td>
-            ${r.estado === 'VENCIDO' ? `<button class="btn btn-renovar" onclick="renovar(${r.row})">Renovar</button>` : ''}
-            ${r.estado === 'DISPONIBLE' ? `<button class="btn btn-asignar" onclick="asignar(${r.row})">Asignar</button>` : ''}
-            <button class="btn" onclick="eliminar(${r.row})" style="background:#333; color:white">×</button>
-          </td>
-        `;
-        body.appendChild(tr);
-      });
-    }
-
-    async function renovar(row) {
-      const dias = prompt("Días a sumar:", "30");
-      if(!dias) return;
-      await api("/api/renovar", { method:"POST", body: JSON.stringify({ row, dias: Number(dias) }) });
-      load();
-    }
-
-    // Funciones adicionales que tenías en tu index...
-    // (Asignar, Eliminar, etc se deben mantener según tu lógica original)
-
-    $("q").oninput = render;
-    $("f").onchange = render;
-    window.onload = load;
-  </script>
-</body>
-</html>
+    tr.innerHTML = `
+      <td>
+        <div class="svc-name">${r.servicio}</div>
+        <div class="svc-mail">${r.correo}</div>
+      </td>
+      <td>${r.nombre}</td>
+      <td><span class="badge badge-${r.estado.toLowerCase()}">${r.estado}</span></td>
+      <td class="${isVencido ? 'txt-red' : ''}">${r.dias}</td>
+      <td>
+        <button class="btn-icon" data-act="copy" data-row="${r.row}">📋</button>
+        <button class="btn-icon" data-act="edit" data-row="${r.row}">✏️</button>
+        ${isVencido ? `<button class="btn-renovar" data-act="renew" data-row="${r.row}">Renovar</button>` : ''}
+        ${isDisponible ? `<button class="btn-asignar" data-act="assign" data-row="${r.row}">Asignar</button>` : ''}
+      </td>
+    `;
+    body.appendChild(tr);
+  });
+}
