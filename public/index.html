@@ -10,15 +10,19 @@
       --bg0:#070A16;
       --bg1:#0B1026;
       --bg2:#0E173A;
+
       --line: rgba(255,255,255,.10);
+
       --txt:#F6F8FF;
       --muted:#B5C0FF;
+
       --red:#ff3b5f;
       --green:#18c964;
       --yellow:#f5b301;
       --cyan:#23d5f2;
       --blue:#4f8cff;
       --purple:#b094ff;
+
       --shadow: 0 20px 70px rgba(0,0,0,.55);
       --shadow2: 0 10px 30px rgba(0,0,0,.45);
     }
@@ -38,109 +42,362 @@
 
     .wrap{max-width:1400px;margin:0 auto;padding:22px 18px 70px}
 
-    .topbar{ display:flex;align-items:center;justify-content:space-between; gap:14px;flex-wrap:wrap; margin-bottom:18px; }
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;
+      gap:14px;flex-wrap:wrap;
+      margin-bottom:18px;
+    }
     .brand{display:flex;align-items:center;gap:14px;}
     .logo{
       width:50px;height:50px;border-radius:18px;
-      display:grid;place-items:center; font-weight:1000;
+      display:grid;place-items:center;
+      font-weight:1000;letter-spacing:.6px;
       background: linear-gradient(135deg, rgba(79,140,255,.95), rgba(176,148,255,.95));
       border:1px solid rgba(255,255,255,.10);
       box-shadow: 0 18px 50px rgba(79,140,255,.16);
+      user-select:none;
     }
+    .title{display:flex;flex-direction:column;gap:4px;}
     .title h1{margin:0;font-size:22px;line-height:1}
     .title .sub{margin:0;color:var(--muted);font-size:12px}
 
-    .kpis{ display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:16px; margin-bottom:18px; }
-    .kpi{
-      background: rgba(12,16,35,.62); border:1px solid rgba(255,255,255,.10);
-      border-radius: 22px; padding: 22px 18px; text-align:center; backdrop-filter: blur(16px);
+    .top-actions{
+      display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;
     }
-    .kpi .n{ font-size:44px; font-weight:1000; margin:0; }
-    .kpi.red .n{ color: var(--red); }
-    .kpi .lbl{ margin-top:6px; color: rgba(181,192,255,.85); font-size:12px; letter-spacing:1.4px; text-transform:uppercase; }
 
-    .panel{ background: rgba(12,16,35,.62); border:1px solid rgba(255,255,255,.10); border-radius: 22px; padding:18px; }
-    .assign{ display:grid; grid-template-columns: 1.3fr 1.3fr 1.2fr auto; gap:14px; align-items:end; margin-bottom:14px; }
-    .assign2{ display:grid; grid-template-columns: 2fr 1fr; gap:14px; align-items:end; margin-bottom:16px; }
+    .k{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .inline{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
 
     .input, select{
-      width:100%; padding:12px 14px; border-radius:14px; border:1px solid var(--line);
-      background: rgba(10,14,35,.65); color:var(--txt); outline:none;
+      width:100%;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background: rgba(10,14,35,.65);
+      color:var(--txt);
+      outline:none;
+      transition:.15s;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
     }
+    .input::placeholder{color:rgba(181,192,255,.70)}
+    .input:focus, select:focus{
+      border-color: rgba(79,140,255,.55);
+      box-shadow: 0 0 0 4px rgba(79,140,255,.18);
+    }
+    #adminKey{width:220px}
+
     .btn{
-      border:0; cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:900;
-      background: linear-gradient(135deg, rgba(35,213,242,.95), rgba(79,140,255,.95));
+      border:0;cursor:pointer;
+      padding:12px 16px;
+      border-radius:14px;
+      font-weight:900;
       color:#06101a;
+      background: linear-gradient(135deg, rgba(35,213,242,.95), rgba(79,140,255,.95));
+      box-shadow: var(--shadow2);
+      transition:.12s;
+      white-space:nowrap;
+      user-select:none;
     }
-    .btn-green{ background: linear-gradient(135deg, rgba(24,201,100,.95), rgba(35,213,242,.75)); }
+    .btn:hover{filter:brightness(1.08)}
+    .btn:active{transform:translateY(1px)}
+    .btn-outline{
+      color:var(--txt);
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:none;
+    }
+    .btn-outline:hover{background: rgba(255,255,255,.10)}
+    .btn-green{
+      color:#06101a;
+      background: linear-gradient(135deg, rgba(24,201,100,.95), rgba(35,213,242,.75));
+    }
 
-    .tablewrap{ border-radius: 18px; border:1px solid rgba(255,255,255,.10); overflow:auto; background: rgba(9,12,28,.35); }
-    table{ width:100%; border-collapse:collapse; min-width: 1000px; }
-    th, td{ padding: 16px 14px; border-bottom:1px solid rgba(255,255,255,.06); font-size: 13px; }
-    th{ color: rgba(181,192,255,.88); text-transform:uppercase; font-size:11px; letter-spacing:.9px; }
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:16px;
+      margin-bottom:18px;
+    }
+    @media (max-width: 980px){ .kpis{grid-template-columns:1fr; } }
 
-    /* RESTAURACIÓN DE BOTONES ORIGINALES */
-    .actions{ display:flex; gap:10px; flex-wrap:wrap; }
+    .kpi{
+      background: rgba(12,16,35,.62);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 22px 18px;
+      text-align:center;
+      backdrop-filter: blur(16px);
+      position:relative;
+      overflow:hidden;
+    }
+    .kpi::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background:
+        radial-gradient(420px 180px at 25% 0%, rgba(79,140,255,.18), transparent 60%),
+        radial-gradient(420px 180px at 80% 0%, rgba(176,148,255,.16), transparent 60%);
+      pointer-events:none;
+    }
+    .kpi .n{
+      position:relative;
+      font-size:44px;
+      font-weight:1000;
+      letter-spacing:.5px;
+      margin:0;
+    }
+    .kpi .lbl{
+      position:relative;
+      margin-top:6px;
+      color: rgba(181,192,255,.85);
+      font-size:12px;
+      letter-spacing:1.4px;
+      text-transform:uppercase;
+    }
+    .kpi.red .n{ color: var(--red); }
+    .kpi .tiny{
+      position:relative;
+      margin-top:8px;
+      font-size:12px;
+      color:rgba(181,192,255,.78);
+    }
+
+    .panel{
+      background: rgba(12,16,35,.62);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding:18px;
+      backdrop-filter: blur(16px);
+    }
+
+    .assign{
+      display:grid;
+      grid-template-columns: 1.3fr 1.3fr 1.2fr auto;
+      gap:14px;
+      align-items:end;
+      margin-bottom:14px;
+    }
+    @media (max-width: 1100px){ .assign{grid-template-columns:1fr;} }
+
+    .assign2{
+      display:grid;
+      grid-template-columns: 2fr 1fr;
+      gap:14px;
+      align-items:end;
+      margin-bottom:16px;
+    }
+    @media (max-width: 1100px){ .assign2{grid-template-columns:1fr;} }
+
+    .tablewrap{
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.10);
+      overflow:auto;
+      background: rgba(9,12,28,.35);
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width: 1200px;
+    }
+    thead th{
+      position:sticky; top:0; z-index:1;
+      background: rgba(9,12,28,.92);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    th, td{
+      padding: 16px 14px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+    th{
+      color: rgba(181,192,255,.88);
+      font-weight:900;
+      text-transform:uppercase;
+      font-size:11px;
+      letter-spacing:.9px;
+      white-space:nowrap;
+    }
+    tbody tr:hover{ background: rgba(255,255,255,.04); }
+
+    .svc{
+      font-weight:1000;
+      color: var(--cyan);
+      letter-spacing:.4px;
+    }
+
+    .badge-status{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:7px 12px;
+      border-radius: 999px;
+      font-weight:1000;
+      font-size:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      white-space:nowrap;
+    }
+    .badge-status.red{ background: rgba(255,59,95,.14); border-color: rgba(255,59,95,.32); color:#ffd5dc; }
+    .badge-status.green{ background: rgba(24,201,100,.14); border-color: rgba(24,201,100,.32); color:#d6ffe8; }
+    .badge-status.gray{ background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); color:#e9eeff; }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
     .a-btn{
-      border:0; cursor:pointer; padding:10px 14px; border-radius: 12px;
-      font-weight:1000; font-size:12px; color:#06101a; transition:.12s;
-      user-select:none; white-space:nowrap;
+      border:0;
+      cursor:pointer;
+      padding:10px 14px;
+      border-radius: 12px;
+      font-weight:1000;
+      font-size:12px;
+      color:#06101a;
+      transition:.12s;
+      user-select:none;
+      white-space:nowrap;
     }
     .a-btn:hover{filter:brightness(1.06)}
     .a-btn:active{transform:translateY(1px)}
-    
     .a-copy{ background: linear-gradient(135deg, rgba(35,213,242,.98), rgba(79,140,255,.92)); }
     .a-renew{ background: linear-gradient(135deg, rgba(24,201,100,.98), rgba(24,201,100,.70)); }
     .a-move{ background: linear-gradient(135deg, rgba(245,179,1,.98), rgba(245,179,1,.72)); }
     .a-del{ background: linear-gradient(135deg, rgba(255,59,95,.98), rgba(255,59,95,.72)); color:#fff; }
 
-    .mini{ color: rgba(181,192,255,.75); font-size:12px; }
-    .badge-status{ padding:7px 12px; border-radius: 999px; font-weight:1000; font-size:12px; border:1px solid rgba(255,255,255,.10); }
-    .badge-status.red{ background: rgba(255,59,95,.14); border-color: rgba(255,59,95,.32); color:#ffd5dc; }
-    .badge-status.green{ background: rgba(24,201,100,.14); border-color: rgba(24,201,100,.32); color:#d6ffe8; }
+    .mini{color: rgba(181,192,255,.75); font-size:12px; margin-top: 3px;}
+
+    #status{ margin: 10px 0 12px; color: rgba(181,192,255,.78); font-size: 12px; }
+    .err{
+      display:none;
+      margin: 10px 0 12px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,59,95,.40);
+      background: rgba(255,59,95,.14);
+      color:#ffd5dc;
+      white-space: pre-wrap;
+    }
+
+    #availBySvc{
+      margin-top:10px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color: rgba(233,238,255,.92);
+      font-size:12px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+    .chip b{color:#fff}
   </style>
 </head>
 
 <body>
   <div class="wrap">
+
     <div class="topbar">
       <div class="brand">
         <div class="logo">SS</div>
         <div class="title">
-          <h1>SISTEMA STREAMING</h1>
-          <p class="sub">administración • ventas • control</p>
+          <h1>Panel de Clientes</h1>
+          <p class="sub">renovaciones • asignaciones • control</p>
         </div>
       </div>
-      <div style="display:flex; gap:10px">
-        <input class="input" id="adminKey" placeholder="Admin Key" style="width:180px" />
-        <button class="btn" id="btnReload" style="background:rgba(255,255,255,0.1); color:#fff">🔄</button>
+
+      <div class="top-actions">
+        <div>
+          <div class="k">Admin key (opcional)</div>
+          <input class="input" id="adminKey" placeholder="Admin key (opcional)" />
+        </div>
+
+        <button class="btn btn-outline" id="btnReload">Actualizar</button>
+
+        <div class="inline">
+          <div>
+            <div class="k">Auto</div>
+            <select id="autoOn" class="input" style="width:140px">
+              <option value="on" selected>Auto ON</option>
+              <option value="off">Auto OFF</option>
+            </select>
+          </div>
+          <div>
+            <div class="k">Cada (seg)</div>
+            <input id="autoSec" class="input" type="number" min="5" value="30" style="width:120px" />
+          </div>
+          <button class="btn btn-outline" id="btnAutoApply">Aplicar</button>
+        </div>
       </div>
     </div>
 
     <div class="kpis">
-      <div class="kpi"><p class="n" id="cActivos">0</p><div class="lbl">ACTIVOS</div></div>
-      <div class="kpi red"><p class="n" id="cVencidos">0</p><div class="lbl">VENCIDOS</div></div>
-      <div class="kpi"><p class="n" id="cTotal">0</p><div class="lbl">TOTAL CLIENTES</div></div>
+      <div class="kpi">
+        <p class="n" id="cActivos">0</p>
+        <div class="lbl">ACTIVOS</div>
+        <div class="tiny">Clientes con días &gt; 3</div>
+      </div>
+
+      <div class="kpi red">
+        <p class="n" id="cVencidos">0</p>
+        <div class="lbl">VENCIDOS</div>
+        <div class="tiny">Días ≤ 0</div>
+      </div>
+
+      <div class="kpi">
+        <p class="n" id="cTotal">0</p>
+        <div class="lbl">TOTAL</div>
+        <div class="tiny">Clientes</div>
+      </div>
     </div>
 
+    <div style="display:none"><span id="cPorVencer">0</span></div>
+
     <div class="panel">
+
       <div class="assign">
-        <div><div style="font-size:11px; margin-bottom:5px">SERVICIO</div><select id="asSvc" class="input"></select></div>
-        <div><div style="font-size:11px; margin-bottom:5px">CUENTA DISPONIBLE</div><select id="asAccount" class="input"></select></div>
-        <div><div style="font-size:11px; margin-bottom:5px">NOMBRE CLIENTE</div><input id="asName" class="input" placeholder="Nombre" /></div>
-        <button id="btnAssign" class="btn btn-green">✓ REGISTRAR VENTA</button>
+        <div>
+          <div class="k">SERVICIO</div>
+          <select id="asSvc" class="input"></select>
+        </div>
+
+        <div>
+          <div class="k">CUENTA LIBRE</div>
+          <select id="asAccount" class="input"></select>
+        </div>
+
+        <div>
+          <div class="k">CLIENTE</div>
+          <input id="asName" class="input" placeholder="Nombre" />
+        </div>
+
+        <button id="btnAssign" class="btn btn-green">✓ ASIGNAR</button>
       </div>
 
       <div class="assign2">
-        <div><div style="font-size:11px; margin-bottom:5px">WHATSAPP / DÍAS</div>
-          <div style="display:flex; gap:10px">
-            <input id="asTel" class="input" placeholder="Ej: 1809..." style="flex:2" />
-            <input id="asDays" class="input" type="number" value="30" style="flex:1" />
+        <div>
+          <div class="k">TELÉFONO / DÍAS</div>
+          <div class="inline">
+            <input id="asTel" class="input" placeholder="Teléfono" style="min-width:260px" />
+            <input id="asDays" class="input" type="number" value="30" min="1" style="width:140px" />
           </div>
         </div>
-        <div><div style="font-size:11px; margin-bottom:5px">FILTRAR LISTA</div>
+
+        <div>
+          <div class="k">ESTADOS</div>
           <select id="f" class="input">
-            <option value="">TODOS</option>
+            <option value="">TODOS LOS ESTADOS</option>
             <option value="vencidos">VENCIDOS</option>
             <option value="porvencer">POR VENCER</option>
             <option value="activos">ACTIVOS</option>
@@ -148,16 +405,32 @@
         </div>
       </div>
 
-      <div style="margin-bottom:15px"><input class="input" id="q" placeholder="Buscar cliente o cuenta..." /></div>
-      <div id="status" style="font-size:12px; margin-bottom:10px; color:var(--muted)">Cargando...</div>
+      <div>
+        <div class="k">BUSCAR CLIENTE O CUENTA…</div>
+        <input class="input" id="q" placeholder="Buscar cliente o cuenta..." />
+      </div>
 
-      <div class="tablewrap">
+      <div id="status">Cargando…</div>
+      <div id="err" class="err"></div>
+
+      <div style="margin-top:10px; display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+        <div class="mini">
+          Disponibles: <b id="availTotal">0</b>
+          <span id="autoInfo" style="margin-left:10px"></span>
+        </div>
+      </div>
+
+      <div id="availBySvc"></div>
+      <div id="assignMsg" class="err" style="display:none"></div>
+
+      <div class="tablewrap" style="margin-top:14px;">
         <table>
           <thead>
             <tr>
               <th>SERVICIO</th>
               <th>CUENTA</th>
               <th>CLIENTE</th>
+              <th>TELÉFONO</th>
               <th>ESTADO</th>
               <th>ACCIONES DE CONTROL</th>
             </tr>
@@ -165,134 +438,492 @@
           <tbody id="tb"></tbody>
         </table>
       </div>
+
     </div>
   </div>
 
   <script>
     let allRows = [];
     let availableMapByService = {};
-    const $ = id => document.getElementById(id);
+    let autoTimer = null;
+    let lastLoadAt = 0;
 
-    async function api(path, opts = {}) {
-      const key = $("adminKey").value.trim();
+    const $ = (id) => document.getElementById(id);
+
+    function setStatus(t){ $("status").textContent = t; }
+    function showErr(msg){ const e=$("err"); e.style.display="block"; e.textContent=msg; }
+    function hideErr(){ const e=$("err"); e.style.display="none"; e.textContent=""; }
+
+    function esc(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+
+    function headers(){
+      const k = $("adminKey").value.trim();
+      return k ? { "x-admin-key": k } : {};
+    }
+
+    async function api(path, opts = {}){
       const res = await fetch(path, {
         ...opts,
-        headers: { "Content-Type": "application/json", "x-admin-key": key, ...(opts.headers || {}) }
+        headers: { "Content-Type":"application/json", ...headers(), ...(opts.headers||{}) }
       });
-      return await res.json();
+      const data = await res.json().catch(()=> ({}));
+      if(!res.ok || data.ok === false){
+        throw new Error(data.error || `Error ${res.status}`);
+      }
+      return data;
     }
 
-    async function load() {
-      $("status").textContent = "Sincronizando...";
-      try {
-        const data = await api("/api/dashboard");
-        allRows = (data.rows || []).filter(r => (r.servicio || r.correo || r.nombre));
-
-        const c = { vencidos: 0, activos: 0, total: 0 };
-        availableMapByService = {};
-
-        allRows.forEach(r => {
-          const isDisp = String(r.nombre).toLowerCase().trim() === "disponible";
-          if (isDisp) {
-            const s = r.servicio || "OTROS";
-            if (!availableMapByService[s]) availableMapByService[s] = [];
-            availableMapByService[s].push(r);
-          } else {
-            c.total++;
-            if (r.bucket === "vencidos") c.vencidos++;
-            else c.activos++;
-          }
-        });
-
-        $("cTotal").textContent = c.total;
-        $("cVencidos").textContent = c.vencidos;
-        $("cActivos").textContent = c.activos;
-
-        updateDropdowns();
-        render();
-        $("status").textContent = "Listo ✅";
-      } catch (e) { $("status").textContent = "Error de conexión"; }
+    async function apiFree(row){
+      try{
+        return await api("/api/free", { method:"POST", body: JSON.stringify({ row }) });
+      }catch(e){
+        return await api("/api/delete", { method:"POST", body: JSON.stringify({ row }) });
+      }
     }
 
-    function updateDropdowns() {
-      const svcs = Object.keys(availableMapByService).sort();
-      const selSvc = $("asSvc");
-      const currentSvc = selSvc.value;
-      selSvc.innerHTML = `<option value="">Seleccionar...</option>` + 
-        svcs.map(s => `<option value="${s}">${s} (${availableMapByService[s].length})</option>`).join("");
-      if (currentSvc) { selSvc.value = currentSvc; fillAccounts(); }
+    function formatDateDMY(iso){
+      const [y,m,d] = String(iso||"").split("-");
+      if(!y||!m||!d) return iso || "";
+      return `${d}-${m}-${y}`;
     }
 
-    function fillAccounts() {
+    function buildWhatsappMessage({ nombre, servicio, correo, contrasena, perfil, pin, vence }) {
+      return `Hola ${nombre}! Aqui estan los detalles de tu cuenta de ${servicio}:
+
+*Correo:* ${correo}
+*Contrasena:* ${contrasena}
+*Perfil:* ${perfil}
+*PIN:* ${pin}
+
+*REGLAS DE ORO:*
+1. Solo se permite el uso en 1 DISPOSITIVO.
+2. No cambies el nombre del perfil.
+3. No modifiques la clave ni el correo.
+4. No compartas la cuenta con terceros.
+
+Tu servicio vence el ${formatDateDMY(vence)}.`;
+    }
+
+    async function copyText(t){
+      await navigator.clipboard.writeText(t);
+    }
+
+    function isDisponibleName(nombre){
+      return String(nombre || "").trim().toLowerCase() === "disponible";
+    }
+
+    // ✅ FILTRO MEJORADO: evita filas fantasma (aunque traigan codigo/row)
+    function isRowEmpty(r){
+      const servicio = String(r?.servicio ?? "").trim();
+      const nombre = String(r?.nombre ?? "").trim();
+      const telefono = String(r?.telefono ?? "").trim();
+
+      const correo = String(r?.correo ?? "").trim();
+      const contrasena = String(r?.contrasena ?? "").trim();
+      const perfil = String(r?.perfil ?? "").trim();
+      const pin = String(r?.pin ?? "").trim();
+      const vencimiento = String(r?.vencimiento ?? "").trim();
+
+      // si es "disponible" NO es vacía
+      const isDisponible = nombre.toLowerCase() === "disponible";
+      if (isDisponible) return false;
+
+      // datos útiles reales
+      const hasAccountData = !!(correo || contrasena || perfil || pin);
+      const hasClientData = !!(nombre || telefono);
+      const hasService = !!servicio;
+      const hasVence = !!vencimiento;
+
+      const useful = hasAccountData || hasClientData || hasService || hasVence;
+
+      // si no hay nada útil, es vacía
+      return !useful;
+    }
+
+    function svcLabel(s){
+      const v = String(s||"").trim();
+      return v ? v.toUpperCase() : "—";
+    }
+
+    function badgeEstado(r){
+      const dias = Number(r.dias);
+      if(r.bucket === "vencidos") return `<span class="badge-status red">${esc(dias)} DÍAS</span>`;
+      if(r.bucket === "porvencer") return `<span class="badge-status gray">${esc(dias)} DÍAS</span>`;
+      return `<span class="badge-status green">${esc(dias)} DÍAS</span>`;
+    }
+
+    function rebuildAvailableMap(){
+      availableMapByService = {};
+      for(const r of allRows){
+        if(isDisponibleName(r.nombre)){
+          const svc = (r.servicio || "OTROS").trim() || "OTROS";
+          if(!availableMapByService[svc]) availableMapByService[svc] = [];
+          availableMapByService[svc].push(r);
+        }
+      }
+    }
+
+    function fillAccountDropdown(){
       const svc = $("asSvc").value;
       const list = availableMapByService[svc] || [];
-      $("asAccount").innerHTML = list.map(r => `<option value="${r.row}">${r.correo} (P:${r.perfil})</option>`).join("");
+      const sel = $("asAccount");
+      if(!svc || !list.length){
+        sel.innerHTML = `<option value="">Elige servicio...</option>`;
+        return;
+      }
+      sel.innerHTML = list.map(r=>{
+        const label = `${r.correo || "sin-correo"} | Perfil ${r.perfil || "—"} | PIN ${r.pin || "—"} | fila ${r.row}`;
+        return `<option value="${r.row}">${esc(label)}</option>`;
+      }).join("");
     }
 
-    function render() {
-      const q = $("q").value.toLowerCase();
+    function render(){
+      const q = $("q").value.toLowerCase().trim();
       const f = $("f").value;
       const tb = $("tb");
       tb.innerHTML = "";
 
-      allRows.filter(r => {
-        const matchQ = !q || (r.nombre + r.correo + r.servicio).toLowerCase().includes(q);
-        const matchF = !f || r.bucket === f;
-        return matchQ && matchF;
-      }).forEach(r => {
-        const isD = String(r.nombre).toLowerCase().trim() === "disponible";
+      const filtered = allRows.filter(r=>{
+        if (isRowEmpty(r)) return false; // ✅ doble protección
+        const s = `${r.codigo} ${r.nombre} ${r.telefono} ${r.servicio} ${r.correo}`.toLowerCase();
+        if(q && !s.includes(q)) return false;
+        if(f && r.bucket !== f) return false;
+        return true;
+      });
+
+      if(!filtered.length){
+        tb.innerHTML = `<tr><td colspan="6" style="padding:16px;color:rgba(181,192,255,.8)">No hay resultados</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(r=>{
+        const disponible = isDisponibleName(r.nombre);
+
+        const cuentaHtml = `
+          <div><b>${esc(r.correo || "")}</b></div>
+          <div class="mini">Perfil: ${esc(r.perfil || "")} • PIN: ${esc(r.pin || "")}</div>
+          <div class="mini">${esc(r.contrasena || "")}</div>
+        `;
+
+        const clienteHtml = disponible
+          ? `<b style="color:rgba(181,192,255,.9)">Disponible</b>`
+          : `<b>${esc(r.nombre || "")}</b>`;
+
+        const acc = disponible
+          ? `
+            <button class="a-btn a-copy" data-act="copyacc" data-row="${r.row}">COPIAR</button>
+            <button class="a-btn a-move" data-act="editacc" data-row="${r.row}">EDITAR</button>
+            <button class="a-btn a-del" data-act="free" data-row="${r.row}">BORRAR</button>
+          `
+          : `
+            <button class="a-btn a-copy" data-act="copy" data-row="${r.row}">COPIAR</button>
+            <button class="a-btn a-renew" data-act="ren30" data-row="${r.row}">RENOVAR</button>
+            <button class="a-btn a-move" data-act="move" data-row="${r.row}">REASIGNAR</button>
+            <button class="a-btn a-del" data-act="free" data-row="${r.row}">BORRAR</button>
+          `;
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td style="color:var(--cyan); font-weight:1000; letter-spacing:.4px">${r.servicio}</td>
-          <td><div><b>${r.correo}</b></div><div class="mini">Perfil: ${r.perfil} • PIN: ${r.pin}</div></td>
-          <td>${isD ? '<b style="color:rgba(181,192,255,.9)">Disponible</b>' : `<b>${r.nombre}</b><div class="mini">${r.telefono}</div>`}</td>
-          <td><span class="badge-status ${r.bucket === 'vencidos' ? 'red' : 'green'}">${r.dias} DÍAS</span></td>
-          <td>
-            <div class="actions">
-              <button class="a-btn a-copy" onclick="copyRow(${r.row})">COPIAR</button>
-              ${!isD ? `<button class="a-btn a-renew" onclick="renovar(${r.row})">RENOVAR</button>` : ''}
-              ${!isD ? `<button class="a-btn a-move" onclick="reassignRow(${r.row})">REASIGNAR</button>` : ''}
-              <button class="a-btn a-del" onclick="liberar(${r.row})">BORRAR</button>
-            </div>
-          </td>
+          <td class="svc">${esc(svcLabel(r.servicio))}</td>
+          <td>${cuentaHtml}</td>
+          <td>${clienteHtml}</td>
+          <td>${esc(r.telefono || "")}</td>
+          <td>${badgeEstado(r)}</td>
+          <td><div class="actions">${acc}</div></td>
         `;
         tb.appendChild(tr);
       });
     }
 
-    async function asignar() {
-      const row = $("asAccount").value;
-      const nombre = $("asName").value;
-      const telefono = $("asTel").value;
-      const dias = $("asDays").value;
-      if (!row || !nombre) return alert("Faltan datos");
-      const res = await api("/api/asignar", {
-        method: "POST",
-        body: JSON.stringify({ row: Number(row), nombre, telefono, dias: Number(dias) })
-      });
-      if (res.ok) { alert("✅ Venta registrada"); load(); }
+    async function load(silent=false){
+      const now = Date.now();
+      if (now - lastLoadAt < 1200) return;
+      lastLoadAt = now;
+
+      if(!silent){ hideErr(); setStatus("Cargando…"); }
+
+      try{
+        const data = await api("/api/dashboard");
+
+        // ✅ NO CUENTES NI MUESTRES FILAS VACÍAS
+        allRows = (data.rows || []).filter(r => !isRowEmpty(r));
+
+        // ✅ contadores calculados con filas buenas
+        const counts = { vencidos:0, porvencer:0, activos:0, total:0 };
+        for(const r of allRows){
+          counts.total++;
+          if(r.bucket === "vencidos") counts.vencidos++;
+          else if(r.bucket === "porvencer") counts.porvencer++;
+          else if(r.bucket === "activos") counts.activos++;
+        }
+
+        $("cVencidos").textContent = counts.vencidos;
+        $("cActivos").textContent = counts.activos;
+        $("cTotal").textContent = counts.total;
+        $("cPorVencer").textContent = counts.porvencer;
+
+        $("availTotal").textContent = data.availableTotal ?? 0;
+
+        const by = data.availableByService || {};
+        const bySP = data.availableByServiceProfile || {};
+        const chips = Object.keys(by).sort().map(svc=>{
+          const per = bySP[svc] || {};
+          const perTxt = Object.entries(per)
+            .sort((a,b)=> String(a[0]).localeCompare(String(b[0])))
+            .map(([p,n])=> `P${p}:${n}`).join(" • ");
+          return `<span class="chip">${esc(svc)}: <b>${by[svc]}</b> <span style="opacity:.75;margin-left:8px">${esc(perTxt)}</span></span>`;
+        }).join("");
+        $("availBySvc").innerHTML = chips || `<span class="mini">No hay disponibles</span>`;
+
+        rebuildAvailableMap();
+
+        const sel = $("asSvc");
+        const services = Object.keys(availableMapByService).sort();
+        sel.innerHTML = services.length
+          ? `<option value="">Seleccionar...</option>` + services.map(s=> `<option value="${esc(s)}">${esc(s)} (${availableMapByService[s].length})</option>`).join("")
+          : `<option value="">Sin disponibles</option>`;
+
+        fillAccountDropdown();
+
+        if(!silent) setStatus(`Listo ✅ (${allRows.length})`);
+        render();
+        updateAutoInfo();
+      }catch(e){
+        showErr(e.message);
+        setStatus("❌ Error");
+      }
     }
 
-    // Funciones de botones (necesitan estar conectadas a tus rutas de API)
-    async function renovar(row) {
-      const dias = prompt("¿Días a renovar?", "30");
-      if (!dias) return;
-      const res = await api("/api/renovar", { method: "POST", body: JSON.stringify({ row, dias: Number(dias) }) });
-      if (res.ok) load();
+    async function renovar(row, dias){
+      hideErr();
+      setStatus("Renovando…");
+      try{
+        await api("/api/renovar", { method:"POST", body: JSON.stringify({ row, dias }) });
+        setStatus("Renovado ✅");
+        await load(true);
+      }catch(e){
+        showErr(e.message);
+        setStatus("❌ Error");
+      }
     }
 
-    async function liberar(row) {
-      if (!confirm("¿Liberar esta cuenta?")) return;
-      const res = await api("/api/delete", { method: "POST", body: JSON.stringify({ row }) });
-      if (res.ok) load();
+    async function editarCuenta(row){
+      const r = allRows.find(x => Number(x.row) === Number(row));
+      if(!r) return;
+      const correo = prompt("Correo (cuenta):", r.correo ?? ""); if(correo===null) return;
+      const contrasena = prompt("Contraseña (cuenta):", r.contrasena ?? ""); if(contrasena===null) return;
+      const perfil = prompt("Perfil (cuenta):", r.perfil ?? ""); if(perfil===null) return;
+      const pin = prompt("PIN (cuenta):", r.pin ?? ""); if(pin===null) return;
+
+      hideErr();
+      setStatus("Actualizando cuenta…");
+      try{
+        await api("/api/update", {
+          method:"POST",
+          body: JSON.stringify({ row, fields: { correo, contrasena, perfil, pin } })
+        });
+        setStatus("Cuenta actualizada ✅");
+        await load(true);
+      }catch(e){
+        showErr(e.message);
+        setStatus("❌ Error");
+      }
     }
 
-    $("asSvc").onchange = fillAccounts;
-    $("btnAssign").onclick = asignar;
-    $("btnReload").onclick = load;
-    $("q").oninput = render;
-    $("f").onchange = render;
-    window.onload = load;
+    async function asignar(){
+      const servicio = $("asSvc").value.trim();
+      const row = Number($("asAccount").value);
+      const nombre = $("asName").value.trim();
+      const telefono = $("asTel").value.trim();
+      const dias = Number($("asDays").value || 30);
+
+      if(!servicio) return alert("Selecciona un servicio");
+      if(!Number.isFinite(row)) return alert("Selecciona una cuenta libre");
+      if(!nombre) return alert("Pon el nombre");
+      if(!telefono) return alert("Pon el teléfono");
+      if(!Number.isFinite(dias) || dias <= 0) return alert("Días inválidos");
+
+      hideErr();
+      setStatus("Asignando…");
+      try{
+        const out = await api("/api/asignar", {
+          method:"POST",
+          body: JSON.stringify({ row, nombre, telefono, dias })
+        });
+
+        const msg = buildWhatsappMessage({
+          nombre: nombre.toUpperCase(),
+          servicio: out.servicio,
+          correo: out.correo,
+          contrasena: out.contrasena,
+          perfil: out.perfil,
+          pin: out.pin,
+          vence: out.vence
+        });
+
+        await copyText(msg);
+
+        const box = $("assignMsg");
+        box.style.display = "block";
+        box.textContent = "✅ Asignada y mensaje copiado al portapapeles.\n\n" + msg;
+
+        $("asName").value = "";
+        $("asTel").value = "";
+
+        await load(true);
+        setStatus("Asignado ✅");
+      }catch(e){
+        showErr(e.message);
+        setStatus("❌ Error");
+      }
+    }
+
+    function updateAutoInfo(){
+      const on = $("autoOn").value === "on";
+      const sec = Math.max(5, Number($("autoSec").value || 30));
+      $("autoInfo").textContent = on ? `Auto ON • cada ${sec}s` : `Auto OFF`;
+    }
+
+    function applyAutoRefresh(){
+      const on = $("autoOn").value === "on";
+      const sec = Math.max(5, Number($("autoSec").value || 30));
+      if(autoTimer) clearInterval(autoTimer);
+      autoTimer = null;
+
+      if(on){
+        autoTimer = setInterval(() => load(true), sec * 1000);
+      }
+      updateAutoInfo();
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && $("autoOn").value === "on") load(true);
+    });
+
+    document.addEventListener("click", async (ev) => {
+      const btn = ev.target.closest("button");
+      if(!btn) return;
+
+      const act = btn.dataset.act;
+
+      if(act === "ren30") return renovar(Number(btn.dataset.row), 30);
+
+      if(act === "copy"){
+        const row = Number(btn.dataset.row);
+        const r = allRows.find(x => Number(x.row) === row);
+        if(!r) return;
+
+        const msg = buildWhatsappMessage({
+          nombre: (r.nombre || "CLIENTE").toUpperCase(),
+          servicio: r.servicio || "SERVICIO",
+          correo: r.correo || "",
+          contrasena: r.contrasena || "",
+          perfil: r.perfil || "",
+          pin: r.pin || "",
+          vence: r.vencimiento || ""
+        });
+
+        try{ await copyText(msg); alert("✅ Mensaje copiado"); } catch { alert("No se pudo copiar"); }
+        return;
+      }
+
+      if(act === "copyacc"){
+        const row = Number(btn.dataset.row);
+        const r = allRows.find(x => Number(x.row) === row);
+        if(!r) return;
+
+        const txt = `Servicio: ${r.servicio}
+Correo: ${r.correo}
+Contraseña: ${r.contrasena}
+Perfil: ${r.perfil}
+PIN: ${r.pin}
+Fila: ${r.row}`;
+
+        try{ await copyText(txt); alert("✅ Cuenta copiada"); } catch { alert("No se pudo copiar"); }
+        return;
+      }
+
+      if(act === "free"){
+        const row = Number(btn.dataset.row);
+        if(!confirm("¿Seguro que quieres liberar esta cuenta?")) return;
+        hideErr();
+        setStatus("Liberando…");
+        try{
+          await apiFree(row);
+          setStatus("Liberado ✅");
+          await load(true);
+        }catch(e){
+          showErr(e.message);
+          setStatus("❌ Error");
+        }
+        return;
+      }
+
+      if(act === "move"){
+        const fromRow = Number(btn.dataset.row);
+        const r = allRows.find(x => Number(x.row) === fromRow);
+        if(!r) return;
+
+        const svc = (r.servicio || "").trim();
+        const list = (availableMapByService[svc] || []).slice().sort((a,b)=> Number(a.row)-Number(b.row));
+        if(!list.length) return alert("No hay disponibles para este servicio.");
+
+        const pick = prompt(
+          `Pon la FILA destino (Disponible) para ${svc}. Ej: ${list[0].row}\n` +
+          `Opciones: ${list.slice(0,20).map(x=>x.row).join(", ")}${list.length>20?" ":""}`
+        );
+        if(pick === null) return;
+        const toRow = Number(pick);
+        if(!Number.isFinite(toRow)) return alert("Fila destino inválida");
+
+        hideErr();
+        setStatus("Reasignando…");
+
+        try{
+          const out = await api("/api/reassign", {
+            method:"POST",
+            body: JSON.stringify({ fromRow, toRow })
+          });
+
+          const msg = buildWhatsappMessage({
+            nombre: (r.nombre || "CLIENTE").toUpperCase(),
+            servicio: out.servicio,
+            correo: out.correo,
+            contrasena: out.contrasena,
+            perfil: out.perfil,
+            pin: out.pin,
+            vence: r.vencimiento || ""
+          });
+
+          await copyText(msg);
+          alert("✅ Reasignado. Mensaje copiado.");
+          await load(true);
+          setStatus("Reasignado ✅");
+        }catch(e){
+          showErr(e.message);
+          setStatus("❌ Error");
+        }
+        return;
+      }
+
+      if(act === "editacc") return editarCuenta(Number(btn.dataset.row));
+    });
+
+    $("btnReload").addEventListener("click", () => load(false));
+    $("q").addEventListener("input", render);
+    $("f").addEventListener("change", render);
+    $("btnAssign").addEventListener("click", asignar);
+    $("asSvc").addEventListener("change", fillAccountDropdown);
+
+    $("btnAutoApply").addEventListener("click", applyAutoRefresh);
+    $("autoOn").addEventListener("change", applyAutoRefresh);
+
+    load(false);
+    applyAutoRefresh();
   </script>
 </body>
 </html>
