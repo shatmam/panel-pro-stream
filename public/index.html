@@ -10,19 +10,15 @@
       --bg0:#070A16;
       --bg1:#0B1026;
       --bg2:#0E173A;
-
       --line: rgba(255,255,255,.10);
-
       --txt:#F6F8FF;
       --muted:#B5C0FF;
-
       --red:#ff3b5f;
       --green:#18c964;
       --yellow:#f5b301;
       --cyan:#23d5f2;
       --blue:#4f8cff;
       --purple:#b094ff;
-
       --shadow: 0 20px 70px rgba(0,0,0,.55);
       --shadow2: 0 10px 30px rgba(0,0,0,.45);
     }
@@ -302,6 +298,32 @@
       white-space:nowrap;
     }
     .chip b{color:#fff}
+
+    /* ESTILOS PROVEEDORES */
+    .prov-panel {
+      margin-top: 30px;
+      background: rgba(12,16,35,0.4);
+      border: 1px dashed rgba(176,148,255,0.3);
+      border-radius: 22px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .prov-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .prov-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+      padding: 15px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .prov-name { font-weight: 900; color: var(--purple); font-size: 14px; text-transform: uppercase; margin-bottom: 5px; }
+    .prov-days { font-size: 24px; font-weight: 1000; }
+    .prov-days.warn { color: var(--red); }
+    .prov-info { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
   </style>
 </head>
 
@@ -441,7 +463,19 @@
       </div>
 
     </div>
-  </div>
+
+    <!-- SECCIÓN INDEPENDIENTE: CONTROL DE PROVEEDORES -->
+    <div class="prov-panel">
+      <div class="brand">
+        <div class="title">
+          <h2 style="margin:0; font-size:18px;">Pagos a Proveedores</h2>
+          <p class="sub">Días restantes según el vencimiento más cercano del grupo</p>
+        </div>
+      </div>
+      <div id="provGrid" class="prov-grid"></div>
+    </div>
+
+  </div> <!-- /wrap -->
 
   <script>
     let allRows = [];
@@ -517,7 +551,6 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
       return String(nombre || "").trim().toLowerCase() === "disponible";
     }
 
-    // ✅ FILTRO MEJORADO: evita filas fantasma
     function isRowEmpty(r){
       const servicio = String(r?.servicio ?? "").trim();
       const nombre = String(r?.nombre ?? "").trim();
@@ -529,11 +562,9 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
       const vencimiento = String(r?.vencimiento ?? "").trim();
       const proveedor = String(r?.proveedor ?? "").trim();
 
-      // si es "disponible" NO es vacía
       const isDisponible = nombre.toLowerCase() === "disponible";
       if (isDisponible) return false;
 
-      // datos útiles reales
       const hasAccountData = !!(correo || contrasena || perfil || pin);
       const hasClientData = !!(nombre || telefono);
       const hasService = !!servicio;
@@ -541,8 +572,6 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
       const hasProv = !!proveedor;
 
       const useful = hasAccountData || hasClientData || hasService || hasVence || hasProv;
-
-      // si no hay nada útil, es vacía
       return !useful;
     }
 
@@ -581,6 +610,46 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
         const label = `${r.correo || "sin-correo"} | Perfil ${r.perfil || "—"} | PIN ${r.pin || "—"} | fila ${r.row}`;
         return `<option value="${r.row}">${esc(label)}</option>`;
       }).join("");
+    }
+
+    // LÓGICA DE PROVEEDORES
+    function renderProveedores() {
+      const grid = $("provGrid");
+      grid.innerHTML = "";
+      const provs = {};
+
+      allRows.forEach(r => {
+        const pName = (r.proveedor || "").trim();
+        if (!pName) return;
+        
+        if (!provs[pName]) {
+          provs[pName] = { name: pName, minDays: 999, total: 0 };
+        }
+        
+        const dias = Number(r.dias);
+        if (dias < provs[pName].minDays) provs[pName].minDays = dias;
+        provs[pName].total++;
+      });
+
+      const sortedProvs = Object.values(provs).sort((a,b) => a.minDays - b.minDays);
+
+      if(!sortedProvs.length){
+        grid.innerHTML = `<div class="mini">No hay datos de proveedores para mostrar</div>`;
+        return;
+      }
+
+      sortedProvs.forEach(p => {
+        const isWarn = p.minDays <= 3;
+        const card = document.createElement("div");
+        card.className = "prov-card";
+        card.innerHTML = `
+          <div class="prov-name">${esc(p.name)}</div>
+          <div class="prov-days ${isWarn ? 'warn' : ''}">${p.minDays} Días</div>
+          <div class="prov-info">Vencimiento más próximo</div>
+          <div class="mini">Cuentas en este grupo: ${p.total}</div>
+        `;
+        grid.appendChild(card);
+      });
     }
 
     function render(){
@@ -631,7 +700,7 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="svc">${esc(svcLabel(r.servicio))}</td>
-          <td style="opacity:0.85">${esc(r.proveedor || "—")}</td>
+          <td style="font-weight:700; color:var(--purple); opacity:0.8">${esc(r.proveedor || "—")}</td>
           <td>${cuentaHtml}</td>
           <td>${clienteHtml}</td>
           <td>${esc(r.telefono || "")}</td>
@@ -640,6 +709,8 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
         `;
         tb.appendChild(tr);
       });
+      
+      renderProveedores();
     }
 
     async function load(silent=false){
@@ -665,7 +736,6 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
         $("cActivos").textContent = counts.activos;
         $("cTotal").textContent = counts.total;
         $("cPorVencer").textContent = counts.porvencer;
-
         $("availTotal").textContent = data.availableTotal ?? 0;
 
         const by = data.availableByService || {};
@@ -793,10 +863,7 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
       const sec = Math.max(5, Number($("autoSec").value || 30));
       if(autoTimer) clearInterval(autoTimer);
       autoTimer = null;
-
-      if(on){
-        autoTimer = setInterval(() => load(true), sec * 1000);
-      }
+      if(on){ autoTimer = setInterval(() => load(true), sec * 1000); }
       updateAutoInfo();
     }
 
@@ -809,14 +876,12 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
       if(!btn) return;
 
       const act = btn.dataset.act;
-
       if(act === "ren30") return renovar(Number(btn.dataset.row), 30);
 
       if(act === "copy"){
         const row = Number(btn.dataset.row);
         const r = allRows.find(x => Number(x.row) === row);
         if(!r) return;
-
         const msg = buildWhatsappMessage({
           nombre: (r.nombre || "CLIENTE").toUpperCase(),
           servicio: r.servicio || "SERVICIO",
@@ -826,7 +891,6 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
           pin: r.pin || "",
           vence: r.vencimiento || ""
         });
-
         try{ await copyText(msg); alert("✅ Mensaje copiado"); } catch { alert("No se pudo copiar"); }
         return;
       }
@@ -835,15 +899,7 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
         const row = Number(btn.dataset.row);
         const r = allRows.find(x => Number(x.row) === row);
         if(!r) return;
-
-        const txt = `Servicio: ${r.servicio}
-Proveedor: ${r.proveedor || "—"}
-Correo: ${r.correo}
-Contraseña: ${r.contrasena}
-Perfil: ${r.perfil}
-PIN: ${r.pin}
-Fila: ${r.row}`;
-
+        const txt = `Servicio: ${r.servicio}\nProveedor: ${r.proveedor || "—"}\nCorreo: ${r.correo}\nContraseña: ${r.contrasena}\nPerfil: ${r.perfil}\nPIN: ${r.pin}\nFila: ${r.row}`;
         try{ await copyText(txt); alert("✅ Cuenta copiada"); } catch { alert("No se pudo copiar"); }
         return;
       }
@@ -857,10 +913,7 @@ Fila: ${r.row}`;
           await apiFree(row);
           setStatus("Liberado ✅");
           await load(true);
-        }catch(e){
-          showErr(e.message);
-          setStatus("❌ Error");
-        }
+        }catch(e){ showErr(e.message); setStatus("❌ Error"); }
         return;
       }
 
@@ -868,28 +921,16 @@ Fila: ${r.row}`;
         const fromRow = Number(btn.dataset.row);
         const r = allRows.find(x => Number(x.row) === fromRow);
         if(!r) return;
-
         const svc = (r.servicio || "").trim();
         const list = (availableMapByService[svc] || []).slice().sort((a,b)=> Number(a.row)-Number(b.row));
         if(!list.length) return alert("No hay disponibles para este servicio.");
-
-        const pick = prompt(
-          `Pon la FILA destino (Disponible) para ${svc}. Ej: ${list[0].row}\n` +
-          `Opciones: ${list.slice(0,20).map(x=>x.row).join(", ")}${list.length>20?" ":""}`
-        );
+        const pick = prompt(`Pon la FILA destino (Disponible) para ${svc}. Ej: ${list[0].row}\nOpciones: ${list.slice(0,20).map(x=>x.row).join(", ")}`);
         if(pick === null) return;
         const toRow = Number(pick);
         if(!Number.isFinite(toRow)) return alert("Fila destino inválida");
-
-        hideErr();
-        setStatus("Reasignando…");
-
+        hideErr(); setStatus("Reasignando…");
         try{
-          const out = await api("/api/reassign", {
-            method:"POST",
-            body: JSON.stringify({ fromRow, toRow })
-          });
-
+          const out = await api("/api/reassign", { method:"POST", body: JSON.stringify({ fromRow, toRow }) });
           const msg = buildWhatsappMessage({
             nombre: (r.nombre || "CLIENTE").toUpperCase(),
             servicio: out.servicio,
@@ -899,15 +940,11 @@ Fila: ${r.row}`;
             pin: out.pin,
             vence: r.vencimiento || ""
           });
-
           await copyText(msg);
           alert("✅ Reasignado. Mensaje copiado.");
           await load(true);
           setStatus("Reasignado ✅");
-        }catch(e){
-          showErr(e.message);
-          setStatus("❌ Error");
-        }
+        }catch(e){ showErr(e.message); setStatus("❌ Error"); }
         return;
       }
 
@@ -919,7 +956,6 @@ Fila: ${r.row}`;
     $("f").addEventListener("change", render);
     $("btnAssign").addEventListener("click", asignar);
     $("asSvc").addEventListener("change", fillAccountDropdown);
-
     $("btnAutoApply").addEventListener("click", applyAutoRefresh);
     $("autoOn").addEventListener("change", applyAutoRefresh);
 
