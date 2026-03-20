@@ -1,64 +1,102 @@
-async function readAll() {
-  const sheets = await getClient();
-  // Leemos hasta la columna M (Índice 12)
-  const range = `${TAB}!A:M`; 
-  const resp = await sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range });
+require("dotenv").config();
+const express = require("express");
+const path = require("path");
+const {
+  getDashboard,
+  renovarFila,
+  updateFila,
+  asignarEnFila,
+  eliminarCliente,
+  reasignarCuenta
+} = require("./sheets");
 
-  const values = resp.data.values || [];
-  if (!values.length) return { rows: [] };
+const app = express();
+app.use(express.json({ limit: "1mb" }));
+app.use(express.static(path.join(__dirname, "public")));
 
-  const headerRowIndex = findHeaderRow(values);
-  const header = values[headerRowIndex] || [];
-  const map = headerMap(header);
-
-  const rows = [];
-  const rawData = values.slice(headerRowIndex + 1);
-
-  rawData.forEach((r, i) => {
-    const rowNumber = (headerRowIndex + 2) + i;
-    if (!(r || []).some(c => String(c ?? "").trim() !== "")) return;
-
-    const nombreRaw = r[map[norm("nombre")]] || "";
-    const esDisp = norm(nombreRaw) === "disponible" || nombreRaw === "";
-
-    // --- CÁLCULO DE DÍAS (CLIENTE) ---
-    // Usamos el índice 10 (Columna K) para evitar el error del nombre
-    const dCli = esDisp ? 0 : parseDias(r[10]); 
-
-    // --- CÁLCULO DE DÍAS (PROVEEDOR) ---
-    // Usamos el índice 12 (Columna M)
-    const dProv = parseDias(r[12]); 
-
-    rows.push({
-      row: rowNumber,
-      codigo: r[0] || "",
-      nombre: esDisp ? "Disponible" : nombreRaw,
-      telefono: r[map[norm("telefono")]] || "",
-      servicio: r[map[norm("servicio")]] || "",
-      correo: r[map[norm("correo")]] || "",
-      contrasena: r[map[norm("contraseña")]] || r[map[norm("contrasena")]] || "",
-      perfil: r[map[norm("perfil")]] || "",
-      pin: r[map[norm("pin")]] || "",
-      vencimiento: r[map[norm("fecha de vencimiento")]] || "",
-      dias: esDisp ? "" : `${dCli} DÍAS`,
-      diasNum: dCli,
-      // Datos específicos del proveedor
-      venceProv: r[11] || "", // Columna L
-      diasProv: dProv,
-      diasProvTexto: `${dProv} DÍAS`,
-      bucket: esDisp ? "disponible" : bucketByDias(dCli),
-      bucketProv: bucketByDias(dProv),
-      esDisponible: esDisp
-    });
-  });
-
-  return { headerRowIndex, header, map, rows };
+function auth(req, res, next) {
+  const required = process.env.ADMIN_KEY;
+  if (!required) return next();
+  const key = req.headers["x-admin-key"];
+  if (key !== required) return res.status(401).json({ ok: false, error: "No autorizado" });
+  next();
 }
 
-// Asegúrate de exportar getProveedores al final
-async function getProveedores() {
-  const { rows } = await readAll();
-  // Filtramos para que solo salgan filas que tengan un correo (cuentas reales)
-  const cuentas = rows.filter(r => r.correo && r.correo.includes("@"));
-  return { ok: true, rows: cuentas };
-}
+app.get("/api/dashboard", auth, async (req, res) => {
+  try {
+    const data = await getDashboard();
+    res.json({ ok: true, ...data });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+app.post("/api/renovar", auth, async (req, res) => {
+  try {
+    const { row, dias } = req.body || {};
+    if (!row || !dias) return res.status(400).json({ ok: false, error: "Faltan {row, dias}" });
+    const out = await renovarFila(Number(row), Number(dias));
+    res.json({ ok: true, ...out });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+app.post("/api/update", auth, async (req, res) => {
+  try {
+    const { row, fields } = req.body || {};
+    if (!row || !fields || typeof fields !== "object") {
+      return res.status(400).json({ ok: false, error: "Faltan {row, fields}" });
+    }
+    const out = await updateFila(Number(row), fields);
+    res.json({ ok: true, ...out });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+app.post("/api/asignar", auth, async (req, res) => {
+  try {
+    const { row, nombre, telefono, dias } = req.body || {};
+    if (!row || !nombre || !telefono) {
+      return res.status(400).json({ ok: false, error: "Faltan {row, nombre, telefono}" });
+    }
+    const out = await asignarEnFila({ rowNumber: Number(row), nombre, telefono, dias: dias ?? 30 });
+    res.json({ ok: true, ...out });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+app.post("/api/delete", auth, async (req, res) => {
+  try {
+    const { row } = req.body || {};
+    if (!row) return res.status(400).json({ ok: false, error: "Falta {row}" });
+    const out = await eliminarCliente(Number(row));
+    res.json({ ok: true, ...out });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+app.post("/api/reassign", auth, async (req, res) => {
+  try {
+    const { fromRow, toRow } = req.body || {};
+    if (!fromRow || !toRow) return res.status(400).json({ ok: false, error: "Faltan {fromRow, toRow}" });
+    const out = await reasignarCuenta({ fromRow: Number(fromRow), toRow: Number(toRow) });
+    res.json({ ok: true, ...out });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+// --- SOLUCIÓN FINAL PARA EL ERROR DE RUTA ---
+// Esta RegExp captura cualquier ruta que no sea de la API y sirve el frontend.
+app.get(/^(?!\/api).+/, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("Servidor en puerto " + PORT);
+});
