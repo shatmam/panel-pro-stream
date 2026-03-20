@@ -1,44 +1,31 @@
-<script>
-const form = document.getElementById('payForm');
-const tbody = document.getElementById('pagoRows');
+async function cargarTablaProveedores() {
+    try {
+        const res = await fetch("/api/proveedores", {
+            headers: { "x-admin-key": localStorage.getItem("admin_key") }
+        });
+        const data = await res.json();
 
-async function loadPagos() {
-  const res = await fetch('/api/pagos');
-  const data = await res.json();
+        const tbody = document.getElementById("body-proveedores"); // Cambia este ID por el de tu tbody
+        tbody.innerHTML = "";
 
-  const pagos = data.data || [];
+        data.rows.forEach(r => {
+            const tr = document.createElement("tr");
+            
+            // Usamos el bucket del proveedor para el color (rojo/amarillo/verde)
+            tr.className = `fila-${r.bucketProv}`; 
 
-  tbody.innerHTML = pagos.map(p => `
-    <tr>
-      <td>${p.proveedor}</td>
-      <td>${p.servicio}</td>
-      <td>$${p.monto}</td>
-      <td>${p.fecha}</td>
-      <td>${p.estado}</td>
-    </tr>
-  `).join("");
+            tr.innerHTML = `
+                <td>${r.servicio}</td>
+                <td>${r.correo}</td>
+                <td>${r.contrasena}</td>
+                <td><strong>${r.diasProvTexto}</strong></td>
+                <td>${r.venceProv}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error("Error cargando proveedores:", error);
+    }
 }
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const data = {
-    proveedor: pName.value,
-    servicio: pSvc.value,
-    monto: pAmount.value,
-    fecha: pDate.value
-  };
-
-  await fetch('/api/pagos/add', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(data)
-  });
-
-  alert("Guardado");
-  form.reset();
-  loadPagos();
-});
-
-loadPagos();
-</script>
+document.addEventListener("DOMContentLoaded", cargarTablaProveedores);
