@@ -97,9 +97,6 @@
       transition:.12s;
       white-space:nowrap;
       user-select:none;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
     }
     .btn:hover{filter:brightness(1.08)}
     .btn:active{transform:translateY(1px)}
@@ -113,12 +110,6 @@
     .btn-green{
       color:#06101a;
       background: linear-gradient(135deg, rgba(24,201,100,.95), rgba(35,213,242,.75));
-    }
-
-    /* Estilo específico para el botón de proveedores */
-    .btn-prov {
-      background: linear-gradient(135deg, var(--purple), var(--blue));
-      color: #000;
     }
 
     .kpis{
@@ -327,9 +318,6 @@
       </div>
 
       <div class="top-actions">
-        <!-- BOTÓN AGREGADO: PROVEEDORES -->
-        <a href="/proveedores" class="btn btn-prov">💳 PROVEEDORES</a>
-
         <div>
           <div class="k">Admin key (opcional)</div>
           <input class="input" id="adminKey" placeholder="Admin key (opcional)" />
@@ -528,25 +516,31 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
       return String(nombre || "").trim().toLowerCase() === "disponible";
     }
 
+    // ✅ FILTRO MEJORADO: evita filas fantasma (aunque traigan codigo/row)
     function isRowEmpty(r){
       const servicio = String(r?.servicio ?? "").trim();
       const nombre = String(r?.nombre ?? "").trim();
       const telefono = String(r?.telefono ?? "").trim();
+
       const correo = String(r?.correo ?? "").trim();
       const contrasena = String(r?.contrasena ?? "").trim();
       const perfil = String(r?.perfil ?? "").trim();
       const pin = String(r?.pin ?? "").trim();
       const vencimiento = String(r?.vencimiento ?? "").trim();
 
+      // si es "disponible" NO es vacía
       const isDisponible = nombre.toLowerCase() === "disponible";
       if (isDisponible) return false;
 
+      // datos útiles reales
       const hasAccountData = !!(correo || contrasena || perfil || pin);
       const hasClientData = !!(nombre || telefono);
       const hasService = !!servicio;
       const hasVence = !!vencimiento;
 
       const useful = hasAccountData || hasClientData || hasService || hasVence;
+
+      // si no hay nada útil, es vacía
       return !useful;
     }
 
@@ -594,7 +588,7 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
       tb.innerHTML = "";
 
       const filtered = allRows.filter(r=>{
-        if (isRowEmpty(r)) return false; 
+        if (isRowEmpty(r)) return false; // ✅ doble protección
         const s = `${r.codigo} ${r.nombre} ${r.telefono} ${r.servicio} ${r.correo}`.toLowerCase();
         if(q && !s.includes(q)) return false;
         if(f && r.bucket !== f) return false;
@@ -654,8 +648,11 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
 
       try{
         const data = await api("/api/dashboard");
+
+        // ✅ NO CUENTES NI MUESTRES FILAS VACÍAS
         allRows = (data.rows || []).filter(r => !isRowEmpty(r));
 
+        // ✅ contadores calculados con filas buenas
         const counts = { vencidos:0, porvencer:0, activos:0, total:0 };
         for(const r of allRows){
           counts.total++;
@@ -812,12 +809,14 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
       if(!btn) return;
 
       const act = btn.dataset.act;
+
       if(act === "ren30") return renovar(Number(btn.dataset.row), 30);
 
       if(act === "copy"){
         const row = Number(btn.dataset.row);
         const r = allRows.find(x => Number(x.row) === row);
         if(!r) return;
+
         const msg = buildWhatsappMessage({
           nombre: (r.nombre || "CLIENTE").toUpperCase(),
           servicio: r.servicio || "SERVICIO",
@@ -827,6 +826,7 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
           pin: r.pin || "",
           vence: r.vencimiento || ""
         });
+
         try{ await copyText(msg); alert("✅ Mensaje copiado"); } catch { alert("No se pudo copiar"); }
         return;
       }
@@ -835,7 +835,14 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
         const row = Number(btn.dataset.row);
         const r = allRows.find(x => Number(x.row) === row);
         if(!r) return;
-        const txt = `Servicio: ${r.servicio}\nCorreo: ${r.correo}\nContraseña: ${r.contrasena}\nPerfil: ${r.perfil}\nPIN: ${r.pin}\nFila: ${r.row}`;
+
+        const txt = `Servicio: ${r.servicio}
+Correo: ${r.correo}
+Contraseña: ${r.contrasena}
+Perfil: ${r.perfil}
+PIN: ${r.pin}
+Fila: ${r.row}`;
+
         try{ await copyText(txt); alert("✅ Cuenta copiada"); } catch { alert("No se pudo copiar"); }
         return;
       }
@@ -860,20 +867,28 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
         const fromRow = Number(btn.dataset.row);
         const r = allRows.find(x => Number(x.row) === fromRow);
         if(!r) return;
+
         const svc = (r.servicio || "").trim();
         const list = (availableMapByService[svc] || []).slice().sort((a,b)=> Number(a.row)-Number(b.row));
         if(!list.length) return alert("No hay disponibles para este servicio.");
-        const pick = prompt(`Pon la FILA destino (Disponible) para ${svc}. Ej: ${list[0].row}\nOpciones: ${list.slice(0,20).map(x=>x.row).join(", ")}`);
+
+        const pick = prompt(
+          `Pon la FILA destino (Disponible) para ${svc}. Ej: ${list[0].row}\n` +
+          `Opciones: ${list.slice(0,20).map(x=>x.row).join(", ")}${list.length>20?" ":""}`
+        );
         if(pick === null) return;
         const toRow = Number(pick);
         if(!Number.isFinite(toRow)) return alert("Fila destino inválida");
+
         hideErr();
         setStatus("Reasignando…");
+
         try{
           const out = await api("/api/reassign", {
             method:"POST",
             body: JSON.stringify({ fromRow, toRow })
           });
+
           const msg = buildWhatsappMessage({
             nombre: (r.nombre || "CLIENTE").toUpperCase(),
             servicio: out.servicio,
@@ -883,6 +898,7 @@ Tu servicio vence el ${formatDateDMY(vence)}.`;
             pin: out.pin,
             vence: r.vencimiento || ""
           });
+
           await copyText(msg);
           alert("✅ Reasignado. Mensaje copiado.");
           await load(true);
