@@ -90,8 +90,33 @@ app.post("/api/reassign", auth, async (req, res) => {
   }
 });
 
+// --- NUEVA FUNCIÓN: RENOVAR PROVEEDOR (COLUMNA M) ---
+app.post("/api/renovar-proveedor", auth, async (req, res) => {
+  try {
+    const { correo, dias } = req.body || {};
+    if (!correo || !dias) return res.status(400).json({ ok: false, error: "Faltan {correo, dias}" });
+
+    // Obtenemos todas las filas para buscar las que coincidan con el correo
+    const data = await getDashboard();
+    const filasCoincidentes = data.filas.filter(f => f.correo === correo);
+
+    if (filasCoincidentes.length === 0) {
+      return res.status(404).json({ ok: false, error: "No se encontraron filas con ese correo" });
+    }
+
+    // Actualizamos la fecha de proveedor en cada fila encontrada
+    // IMPORTANTE: Asegúrate de que en sheets.js, updateFila maneje el campo 'fechaProveedor' hacia la columna M
+    for (const fila of filasCoincidentes) {
+      await updateFila(Number(fila.row), { fechaProveedor: dias });
+    }
+
+    res.json({ ok: true, message: `Proveedor actualizado en ${filasCoincidentes.length} filas.` });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
 // --- SOLUCIÓN FINAL PARA EL ERROR DE RUTA ---
-// Esta RegExp captura cualquier ruta que no sea de la API y sirve el frontend.
 app.get(/^(?!\/api).+/, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
