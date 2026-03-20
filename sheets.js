@@ -1,11 +1,13 @@
+require("dotenv").config();
 const fs = require("fs");
 const { google } = require("googleapis");
 
 const SHEET_ID = process.env.SHEET_ID;
-const TAB = process.env.SHEET_TAB || "Hoja1"; // Ajustado a "Hoja1" según lo común, cámbialo si es necesario
+const TAB = process.env.SHEET_TAB || "Hoja1";
 const CREDENTIALS_PATH = process.env.CREDENTIALS_PATH || "./credentials.json";
-
 const FORCED_LOCALE = (process.env.SHEETS_LOCALE || "es").toLowerCase().trim();
+
+// --- UTILIDADES ---
 
 function norm(s) {
   return String(s ?? "")
@@ -19,60 +21,19 @@ function norm(s) {
     .replace(/[úùü]/g, "u");
 }
 
-async function getClient() {
-  let creds;
-  if (process.env.GOOGLE_CREDS_JSON) {
-    creds = JSON.parse(process.env.GOOGLE_CREDS_JSON);
-  } else {
-    creds = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf-8"));
-  }
-
-  const auth = new google.auth.GoogleAuth({
-    credentials: creds,
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"]
-  });
-  
-  return google.sheets({ version: "v4", auth });
-}
-
-function findHeaderRow(values) {
-  const limit = Math.min(values.length, 20);
-  for (let r = 0; r < limit; r++) {
-    const row = (values[r] || []).map(norm);
-    if (row.includes("nombre") && row.includes("telefono") && row.includes("servicio")) return r;
-  }
-  return -1;
-}
-
-function headerMap(headerRow) {
-  const map = {};
-  (headerRow || []).forEach((h, i) => {
-    const k = norm(h);
-    if (k) map[k] = i;
-  });
-  return map;
-}
-
-function colLetter(n) {
-  let s = "";
-  while (n > 0) {
-    const m = (n - 1) % 26;
-    s = String.fromCharCode(65 + m) + s;
-    n = Math.floor((n - 1) / 26);
-  }
-  return s;
-}
-
 function parseDias(x) {
-  const t = String(x ?? "").trim();
-  if (!t) return NaN;
-  const n = Number(t.replace(",", "."));
-  return Number.isFinite(n) ? n : NaN;
+  if (x === undefined || x === null) return 0;
+  const t = String(x).trim();
+  if (!t || t === "" || t === "NaN") return 0;
+  // Limpia el texto para dejar solo números, puntos o comas
+  const clean = t.replace(",", ".").replace(/[^\d.-]/g, "");
+  const n = parseFloat(clean);
+  return isFinite(n) ? Math.floor(n) : 0;
 }
 
 function bucketByDias(d) {
-  if (Number.isFinite(d) && d <= 0) return "vencidos";
-  if (Number.isFinite(d) && d >= 1 && d <= 3) return "porvencer";
+  if (d <= 0) return "vencidos";
+  if (d >= 1 && d <= 3) return "porvencer";
   return "activos";
 }
 
@@ -95,125 +56,232 @@ function diasFormula({ locale, venceCell }) {
   return `=SI(ESBLANCO(${venceCell});"";${venceCell}-HOY())`;
 }
 
-// ✅ Función mejorada para leer toda la hoja incluyendo Proveedores
+// --- CLIENTE GOOGLE ---
+
+async function getClient() {
+  let creds;
+  if (process.env.GOOGLE_CREDS_JSON) {
+    creds = JSON.parse(process.env.GOOGLE_CREDS_JSON);
+  } else {
+    if (!fs.existsSync(CREDENTIALS_PATH)) throw new Error("Faltan credenciales de Google");
+    creds = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf-8"));
+  }
+  const auth = new google.auth.GoogleAuth({
+    credentials: creds,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+  });
+  return google.sheets({ version: "v4", auth });
+}
+
+// --- LÓGICA DE NEGOCIO ---
+
 async function readAll() {
   const sheets = await getClient();
-  const range = `${TAB}!A:M`; // Leemos hasta la columna M
+  // Rango A:M para cubrir hasta "Días restantes" del proveedor
+  const range = `${TAB}!A:M`;
   const resp = await sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range });
-
   const values = resp.data.values || [];
-  if (!values.length) return { headerRowIndex: -1, header: [], map: {}, rows: [] };
 
-  const headerRowIndex = findHeaderRow(values);
-  if (headerRowIndex === -1) throw new Error("No se encontraron encabezados.");
+  if (!values.length) return { rows: [] };
 
-  const header = values[headerRowIndex] || [];
-  const map = headerMap(header);
-
-  const idx = (name) => (map[norm(name)] ?? -1);
-  const get = (row, name) => {
-    const i = idx(name);
-    return i >= 0 ? (row[i] ?? "") : "";
-  };
-
+  // Buscamos la fila de encabezados (usualmente la 1, índice 0)
   const rows = [];
-  const rawData = values.slice(headerRowIndex + 1);
+  const rawData = values.slice(1); // Saltamos la primera fila de títulos
 
   rawData.forEach((r, i) => {
-    const rowNumber = (headerRowIndex + 2) + i;
-    const hasAny = (r || []).some(c => String(c ?? "").trim() !== "");
+    const rowNumber = i + 2; // +2 porque Excel/Sheets empieza en 1 y saltamos el header
+    const hasAny = r.some(c => String(c ?? "").trim() !== "");
     if (!hasAny) return;
 
-    // Buscamos columnas de días (Col J/K para Cliente, L/M para Proveedor)
-    const dCliente = parseDias(get(r, "dias restantes"));
-    // Buscamos específicamente el segundo "dias restantes" (columna M)
-    const dProv = parseDias(r[12]); 
+    // Mapeo manual basado en tu imagen:
+    // A=0, B=1(nom), C=2(tel), D=3(srv), E=4(mail), F=5(pass), G=6(perf), H=7(pin), I=8(inicio), J=9(venc), K=10(dias), L=11(vProv), M=12(dProv)
+    const dCliente = parseDias(r[10]);
+    const dProv = parseDias(r[12]);
 
     rows.push({
       row: rowNumber,
       codigo: r[0] || "",
-      nombre: get(r, "nombre"),
-      telefono: get(r, "telefono") || get(r, "teléfono"),
-      servicio: get(r, "servicio"),
-      correo: get(r, "correo"),
-      contrasena: get(r, "contraseña") || get(r, "contrasena"),
-      perfil: get(r, "perfil"),
-      pin: get(r, "pin"),
-      inicio: get(r, "fecha de inicio"),
-      vencimiento: r[9] || "", // Columna J
+      nombre: r[1] || "",
+      telefono: r[2] || "",
+      servicio: r[3] || "",
+      correo: r[4] || "",
+      contrasena: r[5] || "",
+      perfil: r[6] || "",
+      pin: r[7] || "",
+      inicio: r[8] || "",
+      vencimiento: r[9] || "",
+      dias: String(dCliente), // Esto evita el "NaN DÍAS" en el frontend
       diasNum: dCliente,
       bucket: bucketByDias(dCliente),
-      // Datos de Proveedor
-      venceProv: r[11] || "", // Columna L
-      diasProv: dProv          // Columna M
+      // Datos Proveedor
+      venceProv: r[11] || "",
+      diasProv: dProv
     });
   });
 
-  return { headerRowIndex, header, map, rows };
+  return { rows };
 }
 
 async function getDashboard() {
   const { rows } = await readAll();
   const counts = { vencidos: 0, porvencer: 0, activos: 0, total: rows.length };
-  rows.forEach(r => { if(counts[r.bucket] !== undefined) counts[r.bucket]++; });
-
+  
   const availableByService = {};
-  const availableByServiceProfile = {};
   let availableTotal = 0;
 
   rows.forEach(r => {
     if (isDisponible(r)) {
       availableTotal++;
-      const svc = String(r.servicio || "OTROS").trim() || "OTROS";
+      const svc = String(r.servicio || "OTROS").trim().toUpperCase();
       availableByService[svc] = (availableByService[svc] || 0) + 1;
-      const p = String(r.perfil || "").trim() || "—";
-      availableByServiceProfile[svc] = availableByServiceProfile[svc] || {};
-      availableByServiceProfile[svc][p] = (availableByServiceProfile[svc][p] || 0) + 1;
+    } else {
+      counts[r.bucket]++;
     }
   });
 
-  return { counts, rows, availableByService, availableByServiceProfile, availableTotal };
+  // Ordenar: Vencidos primero, luego por vencer, luego activos
+  const order = { vencidos: 0, porvencer: 1, activos: 2 };
+  rows.sort((a, b) => {
+    if (order[a.bucket] !== order[b.bucket]) return order[a.bucket] - order[b.bucket];
+    return a.diasNum - b.diasNum;
+  });
+
+  return { counts, rows, availableByService, availableTotal };
 }
 
-// ✅ Función para renovar la cuenta con el PROVEEDOR (Columna L)
-async function renovarProveedor(rowNumber, nuevaFechaISO) {
+async function renovarFila(rowNumber, diasExtra) {
   const sheets = await getClient();
-  const range = `${TAB}!L${rowNumber}`; 
+  const { rows } = await readAll();
+  const rowData = rows.find(r => r.row === rowNumber);
   
+  if (!rowData) throw new Error("Fila no encontrada");
+
+  // Si no hay fecha previa, usamos hoy
+  let base = new Date(rowData.vencimiento);
+  if (isNaN(base.getTime())) base = today0();
+
+  const nueva = new Date(base.getTime() + Number(diasExtra) * 86400000);
+  const fechaISO = toISODateOnly(nueva);
+
+  // Actualizar Fecha (Col J = índice 9)
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID,
-    range,
+    range: `${TAB}!J${rowNumber}`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [[nuevaFechaISO]] }
+    requestBody: { values: [[fechaISO]] }
   });
+
+  // Re-aplicar formula de días (Col K = índice 10)
+  const formula = diasFormula({ locale: FORCED_LOCALE, venceCell: `J${rowNumber}` });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${TAB}!K${rowNumber}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[formula]] }
+  });
+
+  return { ok: true, nuevaFecha: fechaISO };
+}
+
+async function asignarEnFila({ rowNumber, nombre, telefono, dias = 30 }) {
+  const sheets = await getClient();
+  const hoy = today0();
+  const vence = new Date(hoy.getTime() + Number(dias) * 86400000);
+  const formula = diasFormula({ locale: FORCED_LOCALE, venceCell: `J${rowNumber}` });
+
+  // Actualizamos el rango B:K (Nombre hasta Días restantes)
+  const values = [[
+    nombre,                 // B
+    telefono,               // C
+    undefined,              // D (No tocamos Servicio)
+    undefined,              // E (No tocamos Correo)
+    undefined,              // F (No tocamos Pass)
+    undefined,              // G (No tocamos Perfil)
+    undefined,              // H (No tocamos PIN)
+    toISODateOnly(hoy),     // I (Inicio)
+    toISODateOnly(vence),   // J (Vencimiento)
+    formula                 // K (Días)
+  ]];
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${TAB}!B${rowNumber}:K${rowNumber}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values }
+  });
+
   return { ok: true };
 }
 
-// ... (Mantengo las funciones asignarEnFila, eliminarCliente, reasignarCuenta del original)
-// Solo asegúrate de que buildUpdatesForRow use los nombres de tu tabla.
-
 async function eliminarCliente(rowNumber) {
-    const sheets = await getClient();
-    // Limpiamos de la B a la K (Nombre hasta Días restantes cliente)
-    // Según tu imagen, las columnas del cliente terminan en K
-    const range = `${TAB}!B${rowNumber}:K${rowNumber}`;
-    const emptyValues = [["Disponible", "", "", "", "", "", "", "", "", ""]];
+  const sheets = await getClient();
+  const formula = diasFormula({ locale: FORCED_LOCALE, venceCell: `J${rowNumber}` });
+  
+  // Limpiamos datos del cliente pero dejamos la estructura
+  // Nombre="Disponible", Tel="", Inicio="", Venc="", Dias=Formula
+  const values = [["Disponible", "", "", "", "", "", "", "", "", formula]];
+  
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${TAB}!B${rowNumber}:K${rowNumber}`, // No tocamos columna A (G) ni columna L/M (Proveedor)
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [["Disponible", "", "", "", "", "", "", "", "", ""]] } 
+  });
+  
+  // Limpiamos celdas específicas de fecha para que no queden restos
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId: SHEET_ID,
+    range: `${TAB}!I${rowNumber}:J${rowNumber}`
+  });
 
-    await sheets.spreadsheets.values.update({
+  return { ok: true };
+}
+
+async function updateFila(rowNumber, fields) {
+  const sheets = await getClient();
+  // Mapeo simple de campos a columnas
+  const map = { nombre: "B", telefono: "C", servicio: "D", correo: "E", contrasena: "F", perfil: "G", pin: "H" };
+  
+  for (const [key, value] of Object.entries(fields)) {
+    const col = map[key];
+    if (col) {
+      await sheets.spreadsheets.values.update({
         spreadsheetId: SHEET_ID,
-        range,
+        range: `${TAB}!${col}${rowNumber}`,
         valueInputOption: "USER_ENTERED",
-        requestBody: { values: emptyValues }
-    });
-    return { row: rowNumber, ok: true };
+        requestBody: { values: [[value]] }
+      });
+    }
+  }
+  return { ok: true };
+}
+
+async function reasignarCuenta({ fromRow, toRow }) {
+  const { rows } = await readAll();
+  const src = rows.find(r => r.row === fromRow);
+  const dest = rows.find(r => r.row === toRow);
+
+  if (!src || !dest) throw new Error("Filas no válidas");
+
+  // Movemos datos del cliente de src a dest
+  await asignarEnFila({ 
+    rowNumber: toRow, 
+    nombre: src.nombre, 
+    telefono: src.telefono, 
+    dias: src.diasNum 
+  });
+  
+  // Limpiamos origen
+  await eliminarCliente(fromRow);
+
+  return { ok: true };
 }
 
 module.exports = {
   getDashboard,
-  renovarFila: require("./sheets").renovarFila, // Si necesitas la original
-  updateFila: require("./sheets").updateFila,
-  asignarEnFila: require("./sheets").asignarEnFila,
+  renovarFila,
+  updateFila,
+  asignarEnFila,
   eliminarCliente,
-  reasignarCuenta: require("./sheets").reasignarCuenta,
-  renovarProveedor
+  reasignarCuenta
 };
