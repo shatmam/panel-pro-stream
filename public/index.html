@@ -14,67 +14,63 @@
       --shadow: 0 20px 70px rgba(0,0,0,.55); --shadow2: 0 10px 30px rgba(0,0,0,.45);
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family: system-ui, -apple-system, sans-serif; color:var(--txt);
-      background: radial-gradient(900px 520px at 12% 8%, rgba(79,140,255,.22), transparent 60%), linear-gradient(180deg, var(--bg0), var(--bg1) 40%, var(--bg2));
-    }
-    .wrap{max-width:1450px; margin:0 auto; padding:20px;}
-    .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
-    .logo{ width:45px; height:45px; border-radius:12px; display:grid; place-items:center; font-weight:900; background: linear-gradient(135deg, var(--blue), var(--purple)); }
-    
-    .input, select{
-      padding:10px 14px; border-radius:10px; border:1px solid var(--line);
-      background: rgba(10,14,35,.65); color:var(--txt); outline:none;
-    }
-    .btn{ border:0; cursor:pointer; padding:10px 16px; border-radius:10px; font-weight:800; transition:.1s; }
-    .btn-green{ background: var(--green); color:#000; }
-
-    .panel{ background: rgba(12,16,35,.65); border:1px solid var(--line); border-radius: 20px; padding:20px; backdrop-filter: blur(10px); }
-    
-    .tablewrap{ border-radius: 15px; border:1px solid var(--line); overflow:auto; background: rgba(0,0,0,.2); margin-top:15px;}
-    table{ width:100%; border-collapse:collapse; min-width: 1200px; }
-    th, td{ padding: 14px; border-bottom:1px solid rgba(255,255,255,.05); text-align: left; font-size:13px; }
-    th{ color: var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:1px; }
-
-    .svc{ font-weight:800; color: var(--cyan); }
-    .badge-status{ padding:5px 10px; border-radius:8px; font-weight:800; font-size:11px; }
-    .badge-status.red{ background: rgba(255,59,95,.15); color:var(--red); }
-    .badge-status.green{ background: rgba(24,201,100,.15); color:var(--green); }
-    .badge-status.purple{ background: rgba(176,148,255,.15); color:var(--purple); border: 1px solid rgba(176,148,255,0.3); }
-
-    .actions{ display:flex; gap:8px; }
-    .a-btn{ border:0; cursor:pointer; padding:8px 12px; border-radius:8px; font-weight:800; font-size:11px; }
-    .a-copy{ background: var(--blue); color:#000; }
-    .a-del{ background: var(--red); color:#fff; }
-    .btn-prov{ background: var(--purple); color:#000; margin-left:5px; font-size:9px; padding:4px 6px; border-radius:5px; }
-    
-    .mini{ color: var(--muted); font-size:11px; opacity:0.8; }
+    html,body{height:100%; margin:0; font-family: system-ui, -apple-system, sans-serif; color:var(--txt); background: var(--bg0);}
+    .wrap{max-width:1500px; margin:0 auto; padding:22px 18px 70px}
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+    .brand{display:flex; align-items:center; gap:14px;}
+    .logo{ width:50px; height:50px; border-radius:18px; display:grid; place-items:center; font-weight:1000; background: linear-gradient(135deg, var(--blue), var(--purple)); border:1px solid var(--line); }
+    .title h1{margin:0; font-size:22px; line-height:1}
+    .title .sub{margin:0; color:var(--muted); font-size:12px}
+    .input, select{ width:100%; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background: rgba(10,14,35,.65); color:var(--txt); outline:none; }
+    .btn{ border:0; cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:900; color:#06101a; background: linear-gradient(135deg, var(--cyan), var(--blue)); }
+    .btn-outline{ color:var(--txt); background: rgba(255,255,255,.06); border:1px solid var(--line); }
+    .kpis{ display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:18px; }
+    .kpi{ background: rgba(12,16,35,.62); border:1px solid var(--line); border-radius: 22px; padding: 22px 18px; text-align:center; backdrop-filter: blur(16px); }
+    .kpi .n{ font-size:44px; font-weight:1000; margin:0; }
+    .kpi.red .n{ color: var(--red); }
+    .panel{ background: rgba(12,16,35,.62); border:1px solid var(--line); border-radius: 22px; padding:18px; backdrop-filter: blur(16px); }
+    .tablewrap{ border-radius: 18px; border:1px solid var(--line); overflow:auto; background: rgba(9,12,28,.35); }
+    table{ width:100%; border-collapse:collapse; min-width: 1100px; }
+    th, td{ padding: 16px 14px; border-bottom:1px solid rgba(255,255,255,.06); font-size: 13px; vertical-align: middle; }
+    th{ color: var(--muted); font-weight:900; text-transform:uppercase; font-size:11px; letter-spacing:.9px; }
+    .svc{ font-weight:1000; color: var(--cyan); }
+    .badge-status{ display:inline-flex; padding:7px 12px; border-radius: 999px; font-weight:1000; font-size:12px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.06); }
+    .badge-status.red{ background: rgba(255,59,95,.14); color:#ffd5dc; border-color: rgba(255,59,95,.32); }
+    .badge-status.green{ background: rgba(24,201,100,.14); color:#d6ffe8; border-color: rgba(24,201,100,.32); }
+    .badge-status.purple{ background: rgba(176,148,255,.14); color:#e9eeff; border-color: rgba(176,148,255,.40); }
+    .actions{ display:flex; gap:10px; }
+    .a-btn{ border:0; cursor:pointer; padding:10px 14px; border-radius: 12px; font-weight:1000; font-size:12px; color:#06101a; }
+    .a-copy{ background: var(--cyan); } .a-renew{ background: var(--green); } .a-del{ background: var(--red); color:#fff; }
+    .mini{ color: var(--muted); font-size:12px; margin-top: 3px; opacity:0.8; }
   </style>
 </head>
 
 <body>
   <div class="wrap">
     <div class="topbar">
-      <div style="display:flex; align-items:center; gap:15px;">
+      <div class="brand">
         <div class="logo">SS</div>
-        <div><h1 style="margin:0; font-size:20px;">Admin Pro</h1></div>
+        <div class="title"><h1>Panel de Clientes</h1><p class="sub">Gestión de Cuentas Maestras y Perfiles</p></div>
       </div>
       <div style="display:flex; gap:10px;">
-        <input class="input" id="adminKey" type="password" placeholder="Admin Key" style="width:150px">
-        <button class="btn btn-green" id="btnReload">🔄</button>
+        <input class="input" id="adminKey" type="password" placeholder="Admin Key" style="width:180px">
+        <button class="btn btn-outline" id="btnReload">Actualizar</button>
       </div>
     </div>
 
+    <div class="kpis">
+      <div class="kpi"><p class="n" id="cActivos">0</p><div class="mini">ACTIVOS</div></div>
+      <div class="kpi red"><p class="n" id="cVencidos">0</p><div class="mini">VENCIDOS</div></div>
+      <div class="kpi"><p class="n" id="cTotal">0</p><div class="mini">TOTAL</div></div>
+    </div>
+
     <div class="panel">
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom:15px;">
-        <input class="input" id="q" placeholder="Buscar cliente o cuenta...">
-        <select id="asSvc" class="input"></select>
-        <button id="btnAssign" class="btn btn-green">ASIGNAR NUEVO</button>
+      <div style="margin-bottom:15px; display:flex; gap:10px;">
+        <input class="input" id="q" placeholder="Buscar por cliente o correo...">
+        <select id="asSvc" class="input" style="width:200px"></select>
       </div>
 
-      <div id="status" class="mini">Cargando datos...</div>
-      <div id="err" style="color:var(--red); display:none; margin:10px 0;"></div>
+      <div id="status" class="mini" style="margin-bottom:10px;">Listo.</div>
 
       <div class="tablewrap">
         <table>
@@ -83,8 +79,9 @@
               <th>SERVICIO</th>
               <th>CUENTA / ACCESO</th>
               <th>CLIENTE</th>
-              <th>ESTADO CLIENTE</th>
-              <th>DÍAS PROVEEDOR (M)</th>
+              <th>TELÉFONO</th>
+              <th>DÍAS CLIENTE</th>
+              <th style="color:var(--purple)">PROVEEDOR (M)</th>
               <th>ACCIONES</th>
             </tr>
           </thead>
@@ -109,20 +106,14 @@
       return data;
     }
 
-    // NUEVA FUNCIÓN PARA RENOVAR TODAS LAS FILAS DE UN CORREO (PROVEEDOR)
-    async function renovarProveedor(correo) {
-      const dias = prompt(`¿Cuántos días quieres sumar a la cuenta maestra ${correo}?`, "30");
+    async function renovarProv(correo) {
+      const dias = prompt(`Días para la cuenta maestra: ${correo}`, "30");
       if(!dias || isNaN(dias)) return;
-      
       try {
         $("status").textContent = "Actualizando proveedor...";
-        await api("/api/renovar-proveedor", { 
-          method: "POST", 
-          body: JSON.stringify({ correo, dias: Number(dias) }) 
-        });
-        alert("✅ Proveedor actualizado en todas las filas con este correo.");
-        load();
-      } catch(e) { alert("Error: " + e.message); }
+        await api("/api/renovar-proveedor", { method: "POST", body: JSON.stringify({ correo, dias: Number(dias) }) });
+        load(true);
+      } catch(e) { alert(e.message); }
     }
 
     function render() {
@@ -135,36 +126,31 @@
         return !q || txt.includes(q);
       }).forEach(r => {
         const isDisp = String(r.nombre).toLowerCase() === "disponible";
-        const tr = document.createElement("tr");
         
-        // Lógica de color para proveedor
-        const diasProv = Number(r.fechaProveedor) || 0;
-        const provClass = diasProv <= 5 ? 'red' : 'purple';
+        // Columna M (Proveedor)
+        const dProv = parseInt(r.fechaProveedor) || 0;
+        const provBadge = `<div style="display:flex; align-items:center; gap:6px;">
+          <span class="badge-status ${dProv <= 5 ? 'red' : 'purple'}">${dProv} d</span>
+          <button onclick="renovarProv('${r.correo}')" style="background:none; border:none; color:var(--purple); cursor:pointer; font-size:10px;">[RENOVAR]</button>
+        </div>`;
 
+        const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="svc">${r.servicio || '—'}</td>
+          <td class="svc">${r.servicio || ""}</td>
           <td>
-            <b>${r.correo || '—'}</b>
-            <div class="mini">P: ${r.perfil || '—'} | PIN: ${r.pin || '—'}</div>
+            <b>${r.correo || ""}</b>
+            <div class="mini">P: ${r.perfil || ""} | PIN: ${r.pin || ""}</div>
+            <div class="mini">${r.contrasena || ""}</div>
           </td>
-          <td>${isDisp ? '<i class="mini">Disponible</i>' : `<b>${r.nombre}</b>`}</td>
-          <td>
-            <span class="badge-status ${r.bucket === 'vencidos' ? 'red' : 'green'}">
-              ${r.dias || 0} DÍAS
-            </span>
-          </td>
-          <td>
-            <div style="display:flex; align-items:center;">
-              <span class="badge-status ${provClass}">
-                ${diasProv} DÍAS
-              </span>
-              <button class="btn-prov" onclick="renovarProveedor('${r.correo}')">RENOVAR</button>
-            </div>
-          </td>
+          <td>${isDisp ? '<b style="color:var(--muted)">Disponible</b>' : `<b>${r.nombre}</b>`}</td>
+          <td>${r.telefono || ""}</td>
+          <td><span class="badge-status ${r.bucket === 'vencidos' ? 'red' : 'green'}">${r.dias || 0} DÍAS</span></td>
+          <td>${provBadge}</td>
           <td>
             <div class="actions">
-              <button class="a-btn a-copy" onclick="alert('Copiado')">COPIAR</button>
-              <button class="a-btn a-del" onclick="liberar(${r.row})">BORRAR</button>
+              <button class="a-btn a-copy" onclick="console.log('copy')">COPIAR</button>
+              <button class="a-btn a-renew" onclick="console.log('ren')">RENOVAR</button>
+              <button class="a-btn a-del" onclick="console.log('del')">BORRAR</button>
             </div>
           </td>
         `;
@@ -172,16 +158,22 @@
       });
     }
 
-    async function load() {
+    async function load(silent = false) {
+      if(!silent) $("status").textContent = "Cargando...";
       try {
         const data = await api("/api/dashboard");
         allRows = data.rows || [];
+        
+        $("cActivos").textContent = allRows.filter(r => r.bucket !== 'vencidos').length;
+        $("cVencidos").textContent = allRows.filter(r => r.bucket === 'vencidos').length;
+        $("cTotal").textContent = allRows.length;
+
         render();
-        $("status").textContent = `Última actualización: ${new Date().toLocaleTimeString()}`;
-      } catch(e) { $("status").textContent = "Error al cargar"; }
+        $("status").textContent = "Actualizado.";
+      } catch(e) { $("status").textContent = "Error de conexión."; }
     }
 
-    $("btnReload").onclick = load;
+    $("btnReload").onclick = () => load();
     $("q").oninput = render;
     load();
   </script>
