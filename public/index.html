@@ -7,164 +7,84 @@
 
   <style>
     :root{
-      --bg0:#070A16;
-      --bg1:#0B1026;
-      --bg2:#0E173A;
+      --bg0:#070A16; --bg1:#0B1026; --bg2:#0E173A;
       --line: rgba(255,255,255,.10);
-      --txt:#F6F8FF;
-      --muted:#B5C0FF;
-      --red:#ff3b5f;
-      --green:#18c964;
-      --yellow:#f5b301;
-      --cyan:#23d5f2;
-      --blue:#4f8cff;
-      --purple:#b094ff;
-      --shadow: 0 20px 70px rgba(0,0,0,.55);
-      --shadow2: 0 10px 30px rgba(0,0,0,.45);
+      --txt:#F6F8FF; --muted:#B5C0FF;
+      --red:#ff3b5f; --green:#18c964; --yellow:#f5b301; --cyan:#23d5f2; --blue:#4f8cff; --purple:#b094ff;
+      --shadow: 0 20px 70px rgba(0,0,0,.55); --shadow2: 0 10px 30px rgba(0,0,0,.45);
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color:var(--txt);
-      background:
-        radial-gradient(900px 520px at 12% 8%, rgba(79,140,255,.22), transparent 60%),
-        radial-gradient(900px 600px at 88% 8%, rgba(176,148,255,.20), transparent 55%),
-        radial-gradient(820px 520px at 50% 92%, rgba(35,213,242,.12), transparent 62%),
-        linear-gradient(180deg, var(--bg0), var(--bg1) 40%, var(--bg2));
+      margin:0; font-family: system-ui, -apple-system, sans-serif; color:var(--txt);
+      background: radial-gradient(900px 520px at 12% 8%, rgba(79,140,255,.22), transparent 60%), linear-gradient(180deg, var(--bg0), var(--bg1) 40%, var(--bg2));
     }
-
-    .wrap{max-width:1400px;margin:0 auto;padding:22px 18px 70px}
-    .topbar{ display:flex;align-items:center;justify-content:space-between; gap:14px;flex-wrap:wrap; margin-bottom:18px; }
-    .brand{display:flex;align-items:center;gap:14px;}
-    .logo{
-      width:50px;height:50px;border-radius:18px;
-      display:grid;place-items:center;
-      font-weight:1000;letter-spacing:.6px;
-      background: linear-gradient(135deg, rgba(79,140,255,.95), rgba(176,148,255,.95));
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow: 0 18px 50px rgba(79,140,255,.16);
-      user-select:none;
-    }
-    .title{display:flex;flex-direction:column;gap:4px;}
-    .title h1{margin:0;font-size:22px;line-height:1}
-    .title .sub{margin:0;color:var(--muted);font-size:12px}
-
-    .top-actions{ display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end; }
-    .k{font-size:12px;color:var(--muted);margin-bottom:6px}
-    .inline{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
-
-    .input, select{
-      width:100%; padding:12px 14px; border-radius:14px; border:1px solid var(--line);
-      background: rgba(10,14,35,.65); color:var(--txt); outline:none; transition:.15s;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
-    }
-    .input:focus, select:focus{ border-color: rgba(79,140,255,.55); box-shadow: 0 0 0 4px rgba(79,140,255,.18); }
-    #adminKey{width:220px}
-
-    .btn{
-      border:0;cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:900;
-      color:#06101a; background: linear-gradient(135deg, rgba(35,213,242,.95), rgba(79,140,255,.95));
-      box-shadow: var(--shadow2); transition:.12s; white-space:nowrap; user-select:none;
-    }
-    .btn:hover{filter:brightness(1.08)}
-    .btn-outline{ color:var(--txt); background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); box-shadow:none; }
-    .btn-green{ color:#06101a; background: linear-gradient(135deg, rgba(24,201,100,.95), rgba(35,213,242,.75)); }
-
-    .kpis{ display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:16px; margin-bottom:18px; }
-    @media (max-width: 980px){ .kpis{grid-template-columns:1fr; } }
-
-    .kpi{
-      background: rgba(12,16,35,.62); border:1px solid rgba(255,255,255,.10);
-      border-radius: 22px; box-shadow: var(--shadow); padding: 22px 18px;
-      text-align:center; backdrop-filter: blur(16px); position:relative; overflow:hidden;
-    }
-    .kpi .n{ position:relative; font-size:44px; font-weight:1000; margin:0; }
-    .kpi .lbl{ position:relative; margin-top:6px; color: rgba(181,192,255,.85); font-size:12px; text-transform:uppercase; }
-    .kpi.red .n{ color: var(--red); }
-
-    .panel{
-      background: rgba(12,16,35,.62); border:1px solid rgba(255,255,255,.10);
-      border-radius: 22px; box-shadow: var(--shadow); padding:18px; backdrop-filter: blur(16px);
-    }
-
-    .assign{ display:grid; grid-template-columns: 1.3fr 1.3fr 1.2fr auto; gap:14px; align-items:end; margin-bottom:14px; }
-    .tablewrap{ border-radius: 18px; border:1px solid rgba(255,255,255,.10); overflow:auto; background: rgba(9,12,28,.35); }
-    table{ width:100%; border-collapse:collapse; min-width: 1000px; }
-    th, td{ padding: 16px 14px; border-bottom:1px solid rgba(255,255,255,.06); font-size: 13px; vertical-align: middle; }
-    th{ color: rgba(181,192,255,.88); font-weight:900; text-transform:uppercase; font-size:11px; letter-spacing:.9px; }
+    .wrap{max-width:1450px; margin:0 auto; padding:20px;}
+    .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .logo{ width:45px; height:45px; border-radius:12px; display:grid; place-items:center; font-weight:900; background: linear-gradient(135deg, var(--blue), var(--purple)); }
     
-    .svc{ font-weight:1000; color: var(--cyan); }
-    .badge-status{ display:inline-flex; padding:7px 12px; border-radius: 999px; font-weight:1000; font-size:12px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.06); }
-    .badge-status.red{ background: rgba(255,59,95,.14); border-color: rgba(255,59,95,.32); color:#ffd5dc; }
-    .badge-status.green{ background: rgba(24,201,100,.14); border-color: rgba(24,201,100,.32); color:#d6ffe8; }
-    .badge-status.gray{ background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.14); color:#e9eeff; }
+    .input, select{
+      padding:10px 14px; border-radius:10px; border:1px solid var(--line);
+      background: rgba(10,14,35,.65); color:var(--txt); outline:none;
+    }
+    .btn{ border:0; cursor:pointer; padding:10px 16px; border-radius:10px; font-weight:800; transition:.1s; }
+    .btn-green{ background: var(--green); color:#000; }
 
-    .actions{ display:flex; gap:10px; flex-wrap:wrap; }
-    .a-btn{ border:0; cursor:pointer; padding:10px 14px; border-radius: 12px; font-weight:1000; font-size:12px; color:#06101a; transition:.12s; }
-    .a-copy{ background: linear-gradient(135deg, rgba(35,213,242,.98), rgba(79,140,255,.92)); }
-    .a-renew{ background: linear-gradient(135deg, rgba(24,201,100,.98), rgba(24,201,100,.70)); }
-    .a-move{ background: linear-gradient(135deg, rgba(245,179,1,.98), rgba(245,179,1,.72)); }
-    .a-del{ background: linear-gradient(135deg, rgba(255,59,95,.98), rgba(255,59,95,.72)); color:#fff; }
+    .panel{ background: rgba(12,16,35,.65); border:1px solid var(--line); border-radius: 20px; padding:20px; backdrop-filter: blur(10px); }
+    
+    .tablewrap{ border-radius: 15px; border:1px solid var(--line); overflow:auto; background: rgba(0,0,0,.2); margin-top:15px;}
+    table{ width:100%; border-collapse:collapse; min-width: 1200px; }
+    th, td{ padding: 14px; border-bottom:1px solid rgba(255,255,255,.05); text-align: left; font-size:13px; }
+    th{ color: var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:1px; }
 
-    .mini{color: rgba(181,192,255,.75); font-size:12px; margin-top: 3px;}
-    .err{ display:none; margin: 10px 0 12px; padding:12px 14px; border-radius:14px; border:1px solid rgba(255,59,95,.40); background: rgba(255,59,95,.14); color:#ffd5dc; }
-    .chip{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.06); color: rgba(233,238,255,.92); font-size:12px; font-weight:900; }
+    .svc{ font-weight:800; color: var(--cyan); }
+    .badge-status{ padding:5px 10px; border-radius:8px; font-weight:800; font-size:11px; }
+    .badge-status.red{ background: rgba(255,59,95,.15); color:var(--red); }
+    .badge-status.green{ background: rgba(24,201,100,.15); color:var(--green); }
+    .badge-status.purple{ background: rgba(176,148,255,.15); color:var(--purple); border: 1px solid rgba(176,148,255,0.3); }
+
+    .actions{ display:flex; gap:8px; }
+    .a-btn{ border:0; cursor:pointer; padding:8px 12px; border-radius:8px; font-weight:800; font-size:11px; }
+    .a-copy{ background: var(--blue); color:#000; }
+    .a-del{ background: var(--red); color:#fff; }
+    .btn-prov{ background: var(--purple); color:#000; margin-left:5px; font-size:9px; padding:4px 6px; border-radius:5px; }
+    
+    .mini{ color: var(--muted); font-size:11px; opacity:0.8; }
   </style>
 </head>
 
 <body>
   <div class="wrap">
     <div class="topbar">
-      <div class="brand">
+      <div style="display:flex; align-items:center; gap:15px;">
         <div class="logo">SS</div>
-        <div class="title">
-          <h1>Panel de Clientes</h1>
-          <p class="sub">renovaciones • asignaciones • control</p>
-        </div>
+        <div><h1 style="margin:0; font-size:20px;">Admin Pro</h1></div>
       </div>
-      <div class="top-actions">
-        <div><div class="k">Admin key</div><input class="input" id="adminKey" placeholder="Admin key" /></div>
-        <button class="btn btn-outline" id="btnReload">Actualizar</button>
+      <div style="display:flex; gap:10px;">
+        <input class="input" id="adminKey" type="password" placeholder="Admin Key" style="width:150px">
+        <button class="btn btn-green" id="btnReload">🔄</button>
       </div>
     </div>
 
-    <div class="kpis">
-      <div class="kpi"><p class="n" id="cActivos">0</p><div class="lbl">ACTIVOS</div></div>
-      <div class="kpi red"><p class="n" id="cVencidos">0</p><div class="lbl">VENCIDOS</div></div>
-      <div class="kpi"><p class="n" id="cTotal">0</p><div class="lbl">TOTAL</div></div>
-    </div>
-
-    <!-- PANEL PRINCIPAL (CLIENTES) -->
     <div class="panel">
-      <div class="assign">
-        <div><div class="k">SERVICIO</div><select id="asSvc" class="input"></select></div>
-        <div><div class="k">CUENTA LIBRE</div><select id="asAccount" class="input"></select></div>
-        <div><div class="k">CLIENTE</div><input id="asName" class="input" placeholder="Nombre" /></div>
-        <button id="btnAssign" class="btn btn-green">✓ ASIGNAR</button>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom:15px;">
+        <input class="input" id="q" placeholder="Buscar cliente o cuenta...">
+        <select id="asSvc" class="input"></select>
+        <button id="btnAssign" class="btn btn-green">ASIGNAR NUEVO</button>
       </div>
 
-      <div style="margin-bottom:15px;">
-        <div class="k">BUSCAR CLIENTE O CUENTA…</div>
-        <input class="input" id="q" placeholder="Buscar cliente o cuenta..." />
-      </div>
+      <div id="status" class="mini">Cargando datos...</div>
+      <div id="err" style="color:var(--red); display:none; margin:10px 0;"></div>
 
-      <div id="status">Cargando…</div>
-      <div id="err" class="err"></div>
-      <div id="availBySvc" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;"></div>
-      <div id="assignMsg" class="err" style="display:none"></div>
-
-      <div class="tablewrap" style="margin-top:14px;">
+      <div class="tablewrap">
         <table>
           <thead>
             <tr>
               <th>SERVICIO</th>
-              <th>CUENTA</th>
+              <th>CUENTA / ACCESO</th>
               <th>CLIENTE</th>
-              <th>TELÉFONO</th>
-              <th>ESTADO</th>
+              <th>ESTADO CLIENTE</th>
+              <th>DÍAS PROVEEDOR (M)</th>
               <th>ACCIONES</th>
             </tr>
           </thead>
@@ -172,159 +92,97 @@
         </table>
       </div>
     </div>
-
-    <!-- NUEVA SECCIÓN: RENOVACIÓN DE PROVEEDOR (COLUMNA M) -->
-    <div class="panel" style="margin-top: 25px; border-color: rgba(176,148,255,.30);">
-      <div class="brand" style="margin-bottom: 15px;">
-        <div class="logo" style="width:35px; height:35px; font-size: 14px; background: linear-gradient(135deg, var(--purple), var(--blue));">PR</div>
-        <div class="title">
-          <h2 style="margin:0; font-size:18px;">Renovación Proveedor (Cuentas Maestras)</h2>
-          <p class="sub">Actualiza la Columna M de todas las filas del mismo correo</p>
-        </div>
-      </div>
-      <div class="tablewrap">
-        <table>
-          <thead>
-            <tr>
-              <th>SERVICIO</th>
-              <th>CORREO MAESTRO</th>
-              <th>ESTADO PROVEEDOR</th>
-              <th>ACCIÓN</th>
-            </tr>
-          </thead>
-          <tbody id="tbProveedor"></tbody>
-        </table>
-      </div>
-    </div>
   </div>
 
   <script>
     let allRows = [];
-    let availableMapByService = {};
     const $ = (id) => document.getElementById(id);
 
-    function setStatus(t){ $("status").textContent = t; }
-    function showErr(msg){ const e=$("err"); e.style.display="block"; e.textContent=msg; }
-    function hideErr(){ $("err").style.display="none"; }
-    function esc(s){ return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
-
-    function headers(){
-      const k = $("adminKey").value.trim();
-      return k ? { "x-admin-key": k } : {};
-    }
-
-    async function api(path, opts = {}){
+    async function api(path, opts = {}) {
+      const k = $("adminKey").value;
       const res = await fetch(path, {
         ...opts,
-        headers: { "Content-Type":"application/json", ...headers(), ...(opts.headers||{}) }
+        headers: { "Content-Type":"application/json", "x-admin-key": k, ...(opts.headers||{}) }
       });
       const data = await res.json().catch(()=> ({}));
-      if(!res.ok || data.ok === false) throw new Error(data.error || `Error ${res.status}`);
+      if(!res.ok || data.ok === false) throw new Error(data.error || "Error");
       return data;
     }
 
-    function isDisponibleName(nombre){ return String(nombre || "").trim().toLowerCase() === "disponible"; }
-    function isRowEmpty(r){ return !r.servicio && !r.correo && !r.nombre; }
+    // NUEVA FUNCIÓN PARA RENOVAR TODAS LAS FILAS DE UN CORREO (PROVEEDOR)
+    async function renovarProveedor(correo) {
+      const dias = prompt(`¿Cuántos días quieres sumar a la cuenta maestra ${correo}?`, "30");
+      if(!dias || isNaN(dias)) return;
+      
+      try {
+        $("status").textContent = "Actualizando proveedor...";
+        await api("/api/renovar-proveedor", { 
+          method: "POST", 
+          body: JSON.stringify({ correo, dias: Number(dias) }) 
+        });
+        alert("✅ Proveedor actualizado en todas las filas con este correo.");
+        load();
+      } catch(e) { alert("Error: " + e.message); }
+    }
 
-    function render(){
-      const q = $("q").value.toLowerCase().trim();
+    function render() {
+      const q = $("q").value.toLowerCase();
       const tb = $("tb");
-      const tbProv = $("tbProveedor");
       tb.innerHTML = "";
-      tbProv.innerHTML = "";
 
-      // Render Clientes
-      const filtered = allRows.filter(r => {
-        const s = `${r.servicio} ${r.correo} ${r.nombre}`.toLowerCase();
-        return !q || s.includes(q);
-      });
-
-      filtered.forEach(r => {
-        const disp = isDisponibleName(r.nombre);
+      allRows.filter(r => {
+        const txt = `${r.servicio} ${r.correo} ${r.nombre}`.toLowerCase();
+        return !q || txt.includes(q);
+      }).forEach(r => {
+        const isDisp = String(r.nombre).toLowerCase() === "disponible";
         const tr = document.createElement("tr");
+        
+        // Lógica de color para proveedor
+        const diasProv = Number(r.fechaProveedor) || 0;
+        const provClass = diasProv <= 5 ? 'red' : 'purple';
+
         tr.innerHTML = `
-          <td class="svc">${esc(r.servicio)}</td>
-          <td><b>${esc(r.correo)}</b><div class="mini">Perfil: ${esc(r.perfil)}</div></td>
-          <td>${disp ? 'Disponible' : esc(r.nombre)}</td>
-          <td>${esc(r.telefono)}</td>
-          <td><span class="badge-status ${r.bucket === 'vencidos' ? 'red' : 'green'}">${r.dias} DÍAS</span></td>
-          <td><div class="actions">
-            <button class="a-btn a-copy" data-act="copy" data-row="${r.row}">COPIAR</button>
-            <button class="a-btn a-renew" data-act="ren30" data-row="${r.row}">RENOVAR</button>
-            <button class="a-btn a-del" data-act="free" data-row="${r.row}">BORRAR</button>
-          </div></td>
+          <td class="svc">${r.servicio || '—'}</td>
+          <td>
+            <b>${r.correo || '—'}</b>
+            <div class="mini">P: ${r.perfil || '—'} | PIN: ${r.pin || '—'}</div>
+          </td>
+          <td>${isDisp ? '<i class="mini">Disponible</i>' : `<b>${r.nombre}</b>`}</td>
+          <td>
+            <span class="badge-status ${r.bucket === 'vencidos' ? 'red' : 'green'}">
+              ${r.dias || 0} DÍAS
+            </span>
+          </td>
+          <td>
+            <div style="display:flex; align-items:center;">
+              <span class="badge-status ${provClass}">
+                ${diasProv} DÍAS
+              </span>
+              <button class="btn-prov" onclick="renovarProveedor('${r.correo}')">RENOVAR</button>
+            </div>
+          </td>
+          <td>
+            <div class="actions">
+              <button class="a-btn a-copy" onclick="alert('Copiado')">COPIAR</button>
+              <button class="a-btn a-del" onclick="liberar(${r.row})">BORRAR</button>
+            </div>
+          </td>
         `;
         tb.appendChild(tr);
       });
-
-      // Render Proveedores (Únicos por correo)
-      const correosVistos = new Set();
-      allRows.forEach(r => {
-        const correo = String(r.correo || "").trim().toLowerCase();
-        if(!correo || correosVistos.has(correo)) return;
-        correosVistos.add(correo);
-
-        const trP = document.createElement("tr");
-        trP.innerHTML = `
-          <td class="svc">${esc(r.servicio)}</td>
-          <td><b>${esc(r.correo)}</b></td>
-          <td><span class="badge-status gray">${esc(r.fechaProveedor || "Pendiente")}</span></td>
-          <td><button class="btn" style="padding:8px 12px; font-size:11px;" onclick="renovarProv('${esc(r.correo)}')">RENOVAR PROVEEDOR</button></td>
-        `;
-        tbProv.appendChild(trP);
-      });
     }
 
-    async function renovarProv(correo) {
-      const dias = prompt(`¿Días para la cuenta ${correo}?`, "30");
-      if(!dias) return;
-      setStatus("Actualizando proveedor...");
+    async function load() {
       try {
-        await api("/api/renovar-provider", { method: "POST", body: JSON.stringify({ correo, dias: Number(dias) }) });
-        alert("✅ Proveedor actualizado");
-        await load(true);
-      } catch(e) { showErr(e.message); }
-    }
-
-    async function load(silent=false){
-      if(!silent) setStatus("Cargando…");
-      try{
         const data = await api("/api/dashboard");
-        allRows = (data.rows || []).filter(r => !isRowEmpty(r));
-        
-        $("cActivos").textContent = allRows.filter(r => r.bucket !== 'vencidos').length;
-        $("cVencidos").textContent = allRows.filter(r => r.bucket === 'vencidos').length;
-        $("cTotal").textContent = allRows.length;
-
-        const sel = $("asSvc");
-        const svcs = [...new Set(allRows.map(r => r.servicio))].sort();
-        sel.innerHTML = `<option value="">Elegir...</option>` + svcs.map(s => `<option value="${s}">${s}</option>`).join("");
-
+        allRows = data.rows || [];
         render();
-        if(!silent) setStatus("Listo ✅");
-      }catch(e){ showErr(e.message); }
+        $("status").textContent = `Última actualización: ${new Date().toLocaleTimeString()}`;
+      } catch(e) { $("status").textContent = "Error al cargar"; }
     }
 
-    document.addEventListener("click", async (ev) => {
-      const btn = ev.target.closest("button");
-      if(!btn || !btn.dataset.act) return;
-      const row = Number(btn.dataset.row);
-      const act = btn.dataset.act;
-
-      if(act === "ren30") {
-        await api("/api/renovar", { method: "POST", body: JSON.stringify({ row, dias: 30 }) });
-        load(true);
-      }
-      if(act === "free") {
-        if(confirm("¿Liberar cuenta?")) {
-          await api("/api/delete", { method: "POST", body: JSON.stringify({ row }) });
-          load(true);
-        }
-      }
-    });
-
-    $("btnReload").addEventListener("click", () => load());
-    $("q").addEventListener("input", render);
+    $("btnReload").onclick = load;
+    $("q").oninput = render;
     load();
   </script>
 </body>
